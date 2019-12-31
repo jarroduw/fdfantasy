@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %} Event List {% endblock title %}
+
+{% block title_page %}
+    <h3>Event List</h3>
+{% endblock title_page %}
+
+{% block content %}
+    {% for event in events %}
+        <p><a href="{% url 'drift:viewEvent' event.id %}">{{ event.name }} in {{ event.location }} ({{ event.start }} to {{ event.end }}</a>)</p>
+    {% endfor %}
+{% endblock content %}
