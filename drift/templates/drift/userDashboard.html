@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %} Fantasy FD Home {% endblock title %}
+
+{% block title_page %}
+    
+{% endblock title_page %}
+
+{% block content %}
+
+    {% if user.is_authenticated %}
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Navigation</h3>
+                    </div>
+                    <div class="panel-body">
+                        <ul>
+                            <li>
+                                <a href="{% url 'drift:myFantasyTeams' %}">My Teams</a>
+                                <ul>
+                                {% for team in teams %}
+                                    <li>
+                                        <a href="{% url 'drift:viewFantasyTeam' team.id %}">{{team.league.name}} - {{team.name}}</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="{% url 'drift:allLeagues' %}">My Leagues</a>
+                                <ul>
+                                    {% for league in leagues %}
+                                        <li><a href="{% url 'drift:league' league.id %}">
+                                            {{league.name}}
+                                            {% if league.race_official == user %}
+                                                *
+                                            {% endif %}
+                                        </a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Feed</h3>
+                    </div>
+                    <div class="panel-body">
+                        {% for note in notifications %}
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            {{note.sender}} ({{note.created_at|timesince}} ago) {% if note.isModified %}(edited {{note.modified_at|timesince}} ago){% endif %}
+                                        </div>
+                                        <div class="panel-body">{{note.msg|safe}}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Upcoming</h3>
+                    </div>
+                    <div class="panel-body">
+                        <ul>
+                            {% for event in upcoming %}
+                                <li><a href="{{event.url}}">{{event.date}} - {{event.title}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="panel panel-default">
+                        <div class="panel-heading"><h3 class="panel-title">About</h3></div>
+                    <div class="panel-body">
+                        <p>Fantasy FD is a site for Formula Drift enthusiasts to compete against friends to be fantasy champion! If you have an account login, if not, please <a href="{% url 'drift:register' %}">register here</a>, it's free!</p>
+                        <p>Interested in learning more about Formula Drift? <a href="https://formulad.com">Visit their website!</a></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading"><h3 class="panel-title">Login</h3></div>
+                    <div clas="panel-body">
+                        {% include 'registration/login_form.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}

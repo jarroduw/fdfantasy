@@ -7,53 +7,91 @@
 {% endblock title_page %}
 
 {% block content %}
-    <h4>Top 2</h4>
-    <ul>
-        <li>Champion: {{races.2.0.winner.name}}</li>
-        <li>Runner-Up: 
-            {% if races.2.0.winner.name == races.2.0.top_seed.name %}
-                {{races.2.0.bottom_seed.name}}
-            {% else %}
-                {{races.2.0.top_seed.name}}
-            {% endif %}
-        </li>
-    </ul>
-    <h4>Qualifiers</h4>
-    <ul>
-        {% for qualifier in qualify %}
-            <li>{{qualifier.racer.name}} - {{qualifier.rank}}</li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-sm-12">
+            <p><em>Each race event features a set of head-to-head races between drivers in a bracket. This page lists the top two finishers, the qualifying ranks, and the head to head matchups.</em></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <h4>Top 2</h4>
+            <ul>
+                <li>Champion: {{races.2.0.winner.name}}</li>
+                <li>Runner-Up: 
+                    {% if races.2.0.winner.name == races.2.0.top_seed.name %}
+                        {{races.2.0.bottom_seed.name}}
+                    {% else %}
+                        {{races.2.0.top_seed.name}}
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <h4>Qualifiers</h4>
+            <ul>
+                {% for qualifier in qualify %}
+                    <li>{{qualifier.racer.name}} - {{qualifier.rank}}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
-    <h4>Races</h4>
-    <h5>Round of 32</h5>
-    <ul>
-        {% for race in races.32 %}
-            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
-        {% endfor %}
-    </ul>
-    <h5>Round of 16</h5>
-    <ul>
-        {% for race in races.16 %}
-            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
-        {% endfor %}
-    </ul>
-    <h5>Round of 8</h5>
-    <ul>
-        {% for race in races.8 %}
-            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
-        {% endfor %}
-    </ul>
-    <h5>Round of 4</h5>
-    <ul>
-        {% for race in races.4 %}
-            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
-        {% endfor %}
-    </ul>
-    <h5>Championship</h5>
-    <ul>
-        {% for race in races.2 %}
-            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-sm-12">
+            <h4>Races</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <h5>Round of 32</h5>
+            <ul>
+                {% for race in races.32 %}
+                    <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-sm-6">
+            <div class="row">
+                <div class="col-sm-12">
+                    <h5>Round of 16</h5>
+                    <ul>
+                        {% for race in races.16 %}
+                            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <h5>Round of 8</h5>
+                    <ul>
+                        {% for race in races.8 %}
+                            <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <h5>Round of 4</h5>
+            <ul>
+                {% for race in races.4 %}
+                    <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-sm-6">
+            <h5>Championship</h5>
+            <ul>
+                {% for race in races.2 %}
+                    <li>{{race.top_seed.name}} vs. {{race.bottom_seed.name}} (winner: {{race.winner.name}})</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 {% endblock content %}

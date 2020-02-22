@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %} Driver {{driver.name}} {% endblock title %}
+
+{% block title_page %}
+    <h3>Driver - {{driver.name}}</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <h4>Bio</h4>
+    <ul>
+        <li>Team: {{driver.team_name}}</li>
+        <li>Car Number: {{driver.car_number}}</li>
+        <li>Car Manufacturer: {{driver.car_manuf}}</li>
+        <li>FD Bio: <a href="https://formulad.com{{driver.driver_url_slug}}">https://formulad.com{{driver.driver_url_slug}}</a></li>
+        <li>Ranking: {{ranking.rank}}</li>
+        <li>Points: {{ranking.points}}</li>
+    </ul>
+
+    <h4>Wins</h4>
+    {% if championships|length > 0 %}
+        <ul>
+            {% for cRace in championships %}
+                {% if cRace.winner.id == driver.id %}<li>{{cRace.event.name}}</li>{% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <ul><li>None</li></ul>
+    {% endif %}
+
+    <h4>Races</h4>
+    <ul>
+        {% for r, raceList in races.items %}
+            <li>{{r}}
+                <ul>
+                    {% for race in raceList %}
+                        <li>Round {{race.event_round}}: {{race.top_seed}} vs. {{race.bottom_seed}} ({% if race.winner.id == driver.id %}Won{% else %} Lost {% endif %})</li>
+
+                    {% endfor %}
+                </ul>
+        {% endfor %}
+    </ul>
+
+    
+{% endblock content %}

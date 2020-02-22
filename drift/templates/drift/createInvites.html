@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %} send Invite for League {% endblock title %}
+
+{% block title_page %}
+    <h3>Send Invite to Join {{league.name}}</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Send Invite">
+    </form>
+
+{% endblock content %}
+
+{% block javascript_footer %}
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %} Driver List {% endblock title %}
+
+{% block title_page %}
+    <h3>Driver List</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <table class="table">
+        <thead><td>Driver</td><td>Team</td><td>Number</td><td>Manufacturer</td><td>Url Slug</td></thead>
+        {% for driver in drivers %}
+            <tr>
+                <td><a href="{% url 'drift:viewRacer' driver.id %}">{{driver.name}}</a></td>
+                <td>{{driver.team_name}}</td>
+                <td>{{driver.car_number}}</td>
+                <td>{{driver.car_manuf}}</td>
+                <td>{{driver.driver_url_slug}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}

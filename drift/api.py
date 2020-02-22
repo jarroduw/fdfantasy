@@ -109,3 +109,39 @@ class RaceApi(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
             )
+
+class ActivateDriverApi(APIView):
+
+    def post(self, request):
+        serializer = TeamActive(data=request.data)
+        print(request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PointsApi(APIView):
+
+    def get(self, request, event, team, racer):
+        data = getPoints(event, team, racer)
+        serializer = ScoringEventSerializer(data)
+        return Response(serializer.data)
+
+def getPoints(event, team, racer):
+    data = ScoringEvent.objects.all(team=team, event=event, racer=racer)
+    return data
+
+def getAllPoints(team, racer):
+    data = ScoringEvent.objects.all(team=team, racer=racer)
+    return data
+
+class NotificationApi(APIView):
+
+    def get(self, request):
+        data = getNotifications(request.user)
+        serializer = NotificationSerializer(data)
+        return Response(serializer.data)
+
+def getNotifications(user):
+    notes = Notification.objects.filter(user=user)
+    return notes

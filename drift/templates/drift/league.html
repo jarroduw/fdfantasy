@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %} League: {{league.name}} {% endblock title %}
+
+{% block title_page %}
+    <h3>League: {{league.name}}</h3>
+{% endblock title_page %}
+
+{% block content %}
+
+    <p>Race Official: {{league.race_official}}</p>
+    {% if draftInFuture %}
+        <p>Draft: {{league.draftdate.draft}} ({{league.draftdate.draft|timeuntil}})</p>
+    {% endif %}
+    {% if user == league.race_official %}
+        <p><a href="{% url 'drift:editLeague' league.id %}">Edit League</a></p>
+        <p><a href="{% url 'drift:inviteToJoinLeague' league.id %}">Invite New Owner</a></p>
+        {% if openInvites|length > 0 %}
+            <p>Open Invitations Sent:</p>
+            <ul>
+                {% for invite in openInvites %}
+                    <li>{{invite.email}} - sent: {{invite.created_at|timesince}} ago, code: {{invite.key_code}}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
+    <p>Teams ({{league.team_set.all|length}})</p>
+
+    <ul>
+        {% for team in league.team_set.all %}
+            <li><a href="{% url 'drift:viewFantasyTeam' team.id %}">{{team.name}}</a> - {{team.owner}}</li>
+        {% endfor %}
+    </ul>
+
+{% endblock content %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %} Create League {% endblock title %}
+
+{% block title_page %}
+    <h3>Create a League</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ leagueForm.as_p }}
+        {{ draftForm.as_p}}
+        <input type="submit" value="Save League">
+    </form>
+
+{% endblock content %}
+
+{% block javascript_footer %}
+
+{% endblock %}

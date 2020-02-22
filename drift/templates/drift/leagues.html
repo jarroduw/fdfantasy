@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %} Leagues {% endblock title %}
+
+{% block title_page %}
+    <h3>Leagues</h3>
+{% endblock title_page %}
+
+{% block content %}
+
+
+    <div class="row">
+        <div class="col-sm-12">
+            <p>Leagues are the basis of competition on the site. Each league has its own scoring rules, based on either total points for the season, head to head matchups between teams, or a combination of both. Get started by joining an open league below, or by creating your own league! If you received an invitation to join a league, please follow the link in the email to join the league using the key code provided.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <a href="{% url 'drift:createLeague' %}" class="btn btn-primary">Create a new league!</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            {% if myLeagues|length != 0 %}
+                <h4>My Leagues</h4>
+                <ul>
+                    {% for league in myLeagues %}
+                        <li><a href="{% url 'drift:league' league.id %}">{{league.name}}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <h4>Leagues I'm In</h4>
+            {% if myTeams|length != 0 %}
+                <ul>
+                    {% for team in myTeams %}
+                        <li><a href="{% url 'drift:league' team.league.id %}">{{team.league.name}}</a></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You're not in any leagues! You should join one below or create your own and invite your friends!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <h4>All Leagues</h4> 
+            <ul>
+                {% for league in leagues %}
+                    <li>
+                        <a href="{% url 'drift:league' league.id %}">{{league.name}}</a>
+                        {% if not league.key_required %}
+                            <a href="{% url 'drift:createFantasyTeam' league.id %}" class="btn btn-primary">Join!</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+{% endblock content %}

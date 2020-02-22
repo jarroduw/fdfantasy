@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %} Teams by {{ facetBy }} {% endblock title %}
+
+{% block title_page %}
+    <h3>Teams by {{ facetBy }}</h3>
+{% endblock title_page %}
+
+{% block content %}
+
+    {% if teamName is None %}
+        <ul>
+            {% for team, racers in teams.items %}
+                <li>{{ team }}
+                    <ul>
+                        {% for racer in racers %}
+                            <li>{{ racer.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+
+        <h4>Team: {{ teamName }}</h4>
+        <ul>
+            {% for racer in racers %}
+                <li>{{racer.name}}</li>
+            {% endfor %}
+        </ul>
+        
+    {% endif %}
+    
+{% endblock content %}

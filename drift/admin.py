@@ -19,8 +19,29 @@ class RacerAdmin(admin.ModelAdmin):
 class RankingAdmin(admin.ModelAdmin):
     list_display = ('created_at', 'racer', 'rank', 'points')
 
+class ScoringValueAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'league', 'award', 'points')
+
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'league', 'owner', 'name')
+
+class LeagueAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'name', 'race_official')
+
+class TeamActiveAdmin(admin.ModelAdmin):
+    list_display = ('modified_at', 'status')
+
 admin.site.register(Event, EventAdmin)
 admin.site.register(Racer, RacerAdmin)
 admin.site.register(Ranking, RankingAdmin)
 admin.site.register(Race, RaceAdmin)
 admin.site.register(Qualify, QualifyAdmin)
+admin.site.register(ScoringValue, ScoringValueAdmin)
+admin.site.register(Team, TeamAdmin)
+admin.site.register(League, LeagueAdmin)
+admin.site.register(TeamActive, TeamActiveAdmin)
+admin.site.register(DraftDate)
+admin.site.register(DraftOrder)
+admin.site.register(MatchupSeed)
+admin.site.register(ScoringEvent)
+admin.site.register(Notification)

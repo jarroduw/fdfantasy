@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %} Create Team {% endblock title %}
+
+{% block title_page %}
+    <h3>Create a Team</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Save Team">
+    </form>
+
+{% endblock content %}
+
+{% block javascript_footer %}
+
+{% endblock %}

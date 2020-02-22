@@ -1,4 +1,5 @@
 from drift.models import *
+from drift.permissions import *
 from rest_framework import serializers
 
 class LeagueSerializer(serializers.ModelSerializer):
@@ -30,3 +31,19 @@ class QualifySerializer(serializers.ModelSerializer):
     class Meta:
         model = Qualify
         exclude = ['created_at', 'modified_at']
+
+class TeamActive(serializers.ModelSerializer):
+    class Meta:
+        model = TeamActive
+        exclude = ['modified_at']
+        permission_classes = [IsTeamOwner]
+
+class ScoringEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoringEvent
+        exclude = ['created_at', 'modified_at']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        

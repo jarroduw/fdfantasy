@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %} Account Information {% endblock title %}
+
+{% block title_page %}
+    <h3>User Account: {{user.username}}</h3>
+{% endblock title_page %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-sm-12">
+            <p>This page contains information about your user account.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <ul>
+                <li>First Name: {{user.first_name}}</li>
+                <li>Last Name: {{user.last_name}}</li>
+                <li>Email: {{user.email}}</li>
+                <li>Joined: {{user.date_joined}}</li>
+                <li>Last Login: {{user.last_login}}</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <p>
+                <a href="{% url 'drift:changePassword' %}">Change Password</a></p>
+                <a href="{% url 'drift:register' user.id %}">Edit</a>
+            </p>
+        </div>
+    </div>
+
+{% endblock content %}
