@@ -25,7 +25,7 @@ SECRET_KEY = '=m^(b@gu^dw9%amw_1wjxbi@ud-8=pp1)s$mj$*!=ed7n$s8q1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -75,10 +75,15 @@ WSGI_APPLICATION = 'fdfantasy.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+with open("__sensitive_dbPass.txt") as fi:
+    dbPass = fi.read()
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'fdfantasy',
+        'USER': 'fdfantasy_user',
+        'PASSWORD': dbPass,
     }
 }
 
