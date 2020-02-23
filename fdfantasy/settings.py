@@ -25,7 +25,7 @@ SECRET_KEY = '=m^(b@gu^dw9%amw_1wjxbi@ud-8=pp1)s$mj$*!=ed7n$s8q1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['localhost', 'www.fdfantasy.com', 'fdfantasy.com']
 
 
 # Application definition
