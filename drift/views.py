@@ -64,7 +64,7 @@ class RegisterAccountView(View):
                         login(request, new_user)
                         adminUser = User.objects.filter(username='admin')[0]
                         send_mail(
-                            "Fantasy FD Activation",
+                            "FD Fantasy Activation",
                             "Thank you for joining! We would like to validate your email for maximum use of the site. Please click on <a href='localhost:8000/activateEmail/%s/'>localhost:8000/activateEmail/%s/</a>" % (ud.nonce, ud.nonce,),
                             "admin@website.com",
                             [new_user.email]
@@ -72,7 +72,7 @@ class RegisterAccountView(View):
                         note = Notification.objects.create(
                             user=new_user,
                             sender=adminUser,
-                            msg='Welcome to Fantasy FD!'
+                            msg='Welcome to FD Fantasy!'
                         )
                         note.save()
                 return HttpResponseRedirect(reverse('drift:home'))
@@ -285,7 +285,7 @@ class InviteUsersToJoinLeague(View):
             email_msg = self.email_msg % (invite.key_code, msg_link, msg_link,)
 
             send_mail(
-                "Fantasy FD League Invite - %s" % (league.name,),
+                "FD Fantasy League Invite - %s" % (league.name,),
                 email_msg,
                 "admin@website.com",
                 [invite.email]
