@@ -4,7 +4,7 @@ NAME="fdfantasy"                              #Name of the application (*)
 DJANGODIR=/home/ec2-user/fdfantasy             # Django project directory (*)
 SOCKFILE=/socket/gunicorn.sock        # we will communicate using this unix socket (*)
 NUM_WORKERS=1                                     # how many worker processes should Gunicorn spawn (*)
-DJANGO_SETTINGS_MODULE=fdfantasy.settings             # which settings file should Django use (*)
+DJANGO_SETTINGS_MODULE=fdfantasy.settings_test             # which settings file should Django use (*)
 DJANGO_WSGI_MODULE=fdfantasy.wsgi                     # WSGI module name (*)
 
 echo "Starting $NAME as `whoami`"
