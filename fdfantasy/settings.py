@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'fdfantasy.wsgi.application'
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 with open("__sensitive_dbPass.txt") as fi:
-    dbPass = fi.read()
+    dbPass = fi.read().strip()
 
 DATABASES = {
     'default': {
