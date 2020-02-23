@@ -1,9 +1,9 @@
 #!/bin/bash
 
-NAME="ourcase"                              #Name of the application (*)
+NAME="fdfantasy"                              #Name of the application (*)
 DJANGODIR=/home/ec2-user/fdfantasy             # Django project directory (*)
-SOCKFILE=/home/ec2-user/fdfantasy/gunicorn.sock        # we will communicate using this unix socket (*)
-NUM_WORKERS=5                                     # how many worker processes should Gunicorn spawn (*)
+SOCKFILE=/socket/gunicorn.sock        # we will communicate using this unix socket (*)
+NUM_WORKERS=1                                     # how many worker processes should Gunicorn spawn (*)
 DJANGO_SETTINGS_MODULE=fdfantasy.settings             # which settings file should Django use (*)
 DJANGO_WSGI_MODULE=fdfantasy.wsgi                     # WSGI module name (*)
 
