@@ -75,7 +75,7 @@ class RegisterAccountView(View):
                         send_mail(
                             "FD Fantasy Activation",
                             email_msg,
-                            "admin@website.com",
+                            settings.DEFAULT_FROM_EMAIL,
                             [new_user.email]
                             )
                         note = Notification.objects.create(
@@ -296,7 +296,7 @@ class InviteUsersToJoinLeague(View):
             send_mail(
                 "FD Fantasy League Invite - %s" % (league.name,),
                 email_msg,
-                "admin@website.com",
+                settings.DEFAULT_FROM_EMAIL,
                 [invite.email]
             )
 

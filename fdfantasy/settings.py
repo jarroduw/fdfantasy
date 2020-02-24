@@ -137,5 +137,6 @@ LOGIN_REDIRECT_URL = 'drift:home'
 LOGOUT_REDIRECT_URL = 'drift:home'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'admin@fdfantasy.com'
 
 ROOT_URL = 'localhost:8000'
