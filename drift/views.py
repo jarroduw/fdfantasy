@@ -289,7 +289,8 @@ class InviteUsersToJoinLeague(View):
                 {
                     'baseUrl': settings.ROOT_URL,
                     'joinCode': invite.key_code,
-                    'user': request.user
+                    'user': request.user,
+                    'league_id': league_id
                 }
             )
 
