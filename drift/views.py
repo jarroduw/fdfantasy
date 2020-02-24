@@ -8,6 +8,8 @@ from django.core.mail import send_mail
 from django.db.models import Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.template import Context
+from django.template.loader import get_template
 from django.utils import timezone
 from django.urls import reverse
 from django.views import View
@@ -63,8 +65,13 @@ class RegisterAccountView(View):
                             )
                         login(request, new_user)
                         adminUser = User.objects.filter(username='admin')[0]
-                        template = get_template('email_activateEmail.html')
-                        email_msg = render(request, 'drift/email_activateEmail.html', {'nonce':ud.nonce})
+                        email_msg = get_template(
+                            'drift/email_activateEmail.html'
+                            ).render({
+                                'nonce': ud.nonce,
+                                'user': request.user,
+                                'baseUrl': settings.ROOT_URL
+                                })
                         send_mail(
                             "FD Fantasy Activation",
                             email_msg,
@@ -82,6 +89,7 @@ class RegisterAccountView(View):
         context = {
             'signUpForm': signUpForm,
             }
+        print(request.build_absolute_uri())
 
         return render(request, 'drift/register.html', context=context)
 
@@ -260,11 +268,6 @@ class CreateLeagueView(View):
 
 class InviteUsersToJoinLeague(View):
 
-    email_msg = """
-        This is your league join code. It can only be used once and was sent
-        specifically to you. When you register, enter the code in the form.
-        Code: %s. Click here: <a href="%s">%s</a>.""".replace("\n", " ")
-
     def post(self, request, league_id):
         league = League.objects.get(id=league_id)
 
@@ -282,9 +285,13 @@ class InviteUsersToJoinLeague(View):
             invite.league = league
             invite.save()
 
-            print(self.email_msg)
-            msg_link = settings.ROOT_URL + reverse('drift:createFantasyTeam', args=[invite.key_code])
-            email_msg = self.email_msg % (invite.key_code, msg_link, msg_link,)
+            email_msg = get_template('drift/email_leagueInvite.html').render(
+                {
+                    'baseUrl': settings.ROOT_URL,
+                    'joinCode': invite.key_code,
+                    'user': request.user
+                }
+            )
 
             send_mail(
                 "FD Fantasy League Invite - %s" % (league.name,),
