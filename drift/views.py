@@ -596,7 +596,9 @@ class ViewFantasyTeam(View):
         currentDate = timezone.now().date()
 
         events = Event.objects.all()
-        nextEvent = events.filter(end__gte=currentDate).order_by('start')[0]
+        nextEvent = events.filter(end__gte=currentDate).order_by('start')
+        if len(nextEvent) > 0:
+            nextEvent = nextEvent[0]
 
         if event_id is None:
             try:
