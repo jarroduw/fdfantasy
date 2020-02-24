@@ -10,8 +10,9 @@ with open('__sensitive_emailPw.txt') as fi:
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'email-smtp.us-west-2.amazonaws.com'
-EMAIL_PORT = 25
+EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'AKIA4PXL5JUP7P25E4EW'
+EMAIL_HOST_USER = 'AKIA4PXL5JUP7JKC5TND'
 EMAIL_HOST_PASSWORD = emailPw
 DEFAULT_FROM_EMAIL = 'admin@fdfantasy.com'
+SERVER_EMAIL = 'admin@fdfantasy.com'
