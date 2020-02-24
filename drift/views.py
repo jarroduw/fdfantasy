@@ -599,6 +599,7 @@ class ViewFantasyTeam(View):
         nextEvent = events.filter(end__gte=currentDate).order_by('start')
         if len(nextEvent) > 0:
             nextEvent = nextEvent[0]
+        else nextEvent = None
 
         if event_id is None:
             try:
