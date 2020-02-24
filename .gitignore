@@ -1,4 +1,5 @@
 *sensitive*
+dataCollection/backup/*
 # Django #
 *.log
 *.pot

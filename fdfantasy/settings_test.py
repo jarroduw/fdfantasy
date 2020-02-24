@@ -1,5 +1,7 @@
 from fdfantasy.settings import *
 
+ROOT_URL = 'fdfantasy.com'
+
 STATIC_ROOT = '/var/www/fdfantasy/static/'
 MEDIA_ROOT = '/var/www/fdfantasy/media/'
 

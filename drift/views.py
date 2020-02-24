@@ -75,7 +75,7 @@ class RegisterAccountView(View):
                             msg='Welcome to FD Fantasy!'
                         )
                         note.save()
-                return HttpResponseRedirect(reverse('drift:home'))
+                    return HttpResponseRedirect(reverse('drift:home'))
 
         context = {
             'signUpForm': signUpForm,

@@ -13,7 +13,7 @@
         <p>Draft: {{league.draftdate.draft}} ({{league.draftdate.draft|timeuntil}})</p>
     {% endif %}
     {% if user == league.race_official %}
-        <p><a href="{% url 'drift:editLeague' league.id %}">Edit League</a></p>
+        <p><a href="{% url 'drift:createLeague' league.id %}">Edit League</a></p>
         <p><a href="{% url 'drift:inviteToJoinLeague' league.id %}">Invite New Owner</a></p>
         {% if openInvites|length > 0 %}
             <p>Open Invitations Sent:</p>
