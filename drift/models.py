@@ -23,7 +23,7 @@ class UserDetail(models.Model):
     activated = models.BooleanField(default=False)
 
     def __str__(self):
-        return "%s-%s" % (self.user, self.league,)
+        return "%s" % (self.user,)
 
 class Racer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
