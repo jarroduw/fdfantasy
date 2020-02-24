@@ -556,7 +556,8 @@ class MyFantasyTeams(View):
 
     def get(self, request):
 
-        teams = Team.objects.filter(owner=request.user)
+        if request.user.is_authenticated
+            teams = Team.objects.filter(owner=request.user)
 
         if len(teams) == 0:
             teams = Team.objects.all()

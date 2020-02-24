@@ -14,5 +14,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'AKIA4PXL5JUP7JKC5TND'
 EMAIL_HOST_PASSWORD = emailPw
-DEFAULT_FROM_EMAIL = 'admin@fdfantasy.com'
-SERVER_EMAIL = 'admin@fdfantasy.com'
+DEFAULT_FROM_EMAIL = 'fdfantasy-noreply@fdfantasy.com'
+SERVER_EMAIL = 'fdfantasy-noreply@fdfantasy.com'
