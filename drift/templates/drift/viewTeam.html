@@ -10,7 +10,9 @@
     <div class="row">
         <div class="col-sm-12">
             <p>League: <a href="{% url 'drift:league' team.league.id %}">{{team.league.name}}</a></p>
-            <p>Next event: <a href="{% url 'drift:viewEvent' nextEvent.id %}">{{nextEvent.name}} ({{nextEvent.start}} - {{nextEvent.end}})</a></p>        
+            {% if nextEvent != None %}
+                <p>Next event: <a href="{% url 'drift:viewEvent' nextEvent.id %}">{{nextEvent.name}} ({{nextEvent.start}} - {{nextEvent.end}})</a></p>        
+            {% endif %}
             {% if draftInFuture %}
                 <p>Draft: {{team.league.draftdate.draft}} ({{team.league.draftdate.draft|timeuntil}})</p>
                 <p><em>The draft is each team's opportunity to select racers for the season. While a team can acquire drivers via trades and free agency, this is the opportunity for teams to acquire most of their talent. Make sure to participate in your league's draft. More details coming soon!</em></p>
