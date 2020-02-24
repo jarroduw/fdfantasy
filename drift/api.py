@@ -1,12 +1,18 @@
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework import status
 
 from .models import *
 from .serializers import *
 
+class ReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS
+
 class UserCheckin:
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def get(self):
         """See all user checkins"""
@@ -15,6 +21,7 @@ class UserCheckin:
         """API call for user checkin"""
 
 class ScoringValues:
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def get(self):
         """Should return all scoring values for a given league"""
@@ -23,11 +30,13 @@ class ScoringValues:
         """Should save all scoring values for a given league"""
 
 class ActivateRacer:
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def post(self):
         """API Call to activate a single racer"""
 
 class DeactivateRacer:
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def post(self):
         """API Call to deactivate a single racer"""
@@ -35,6 +44,7 @@ class DeactivateRacer:
 ###################################################################33
 ## To Do for ingest
 class EventApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def post(self, request, format=None):
         """API call to create a new event"""
@@ -55,6 +65,7 @@ class EventApi(APIView):
         return Response(serializer.data)
 
 class QualifyApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
     def post(self, request, format=None):
         """API call to set the qualify rank"""
 
@@ -68,6 +79,7 @@ class QualifyApi(APIView):
             )
 
 class RacerApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
     def post(self, request, format=None):
         """API call to store a racer."""
 
@@ -88,6 +100,7 @@ class RacerApi(APIView):
         return Response(serializer.data)
 
 class RankingApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
     def post(self, request, format=None):
         serializer = RankingSerializer(data=request.data)
         if serializer.is_valid():
@@ -99,6 +112,7 @@ class RankingApi(APIView):
             )
 
 class RaceApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
     def post(self, request, format=None):
         """API Call to store a race"""
         serializer = RaceSerializer(data=request.data)
@@ -111,6 +125,7 @@ class RaceApi(APIView):
             )
 
 class ActivateDriverApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def post(self, request):
         serializer = TeamActive(data=request.data)
@@ -121,6 +136,7 @@ class ActivateDriverApi(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PointsApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def get(self, request, event, team, racer):
         data = getPoints(event, team, racer)
@@ -136,6 +152,7 @@ def getAllPoints(team, racer):
     return data
 
 class NotificationApi(APIView):
+    permission_classes = [IsAuthenticated|ReadOnly]
 
     def get(self, request):
         data = getNotifications(request.user)

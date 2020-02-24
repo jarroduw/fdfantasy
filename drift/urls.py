@@ -1,4 +1,5 @@
 from django.urls import path
+from rest_framework.authtoken import views as rf_views
 
 from . import views
 from . import api
@@ -40,4 +41,5 @@ urlpatterns = [
     path('api/qualify/', api.QualifyApi.as_view(), name='addQualify'),
     path('api/activate/', api.ActivateDriverApi.as_view(), name='activateDriver'),
     path('api/getPoints/<int:event>/<int:team>/<int:racer>', api.PointsApi.as_view(), name='points'),
+    path('api/token-auth/', rf_views.obtain_auth_token),
 ]

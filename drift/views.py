@@ -63,9 +63,11 @@ class RegisterAccountView(View):
                             )
                         login(request, new_user)
                         adminUser = User.objects.filter(username='admin')[0]
+                        template = get_template('email_activateEmail.html')
+                        email_msg = render(request, 'drift/email_activateEmail.html', {'nonce':ud.nonce})
                         send_mail(
                             "FD Fantasy Activation",
-                            "Thank you for joining! We would like to validate your email for maximum use of the site. Please click on <a href='localhost:8000/activateEmail/%s/'>localhost:8000/activateEmail/%s/</a>" % (ud.nonce, ud.nonce,),
+                            email_msg,
                             "admin@website.com",
                             [new_user.email]
                             )
