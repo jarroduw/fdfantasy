@@ -4,6 +4,16 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # Create your models here.
+class Season(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    name = models.TextField()
+    start = models.DateField()
+    end = models.DateField()
+    active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return '%s (%s - %s)' % (self.name, self.start, self.end,)
 
 class League(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -11,6 +21,7 @@ class League(models.Model):
     name = models.TextField()
     race_official = models.ForeignKey(User, models.SET_NULL, blank=True, null=True)
     key_required = models.BooleanField(default=True, verbose_name="Require a key to join?")
+    season = models.ForeignKey(Season, models.SET_NULL, null=True)
 
     def __str__(self):
         return "%s-%s" % (self.race_official, self.name,)
@@ -46,6 +57,7 @@ class Ranking(models.Model):
     racer = models.ForeignKey(Racer, models.CASCADE)
     rank = models.IntegerField()
     points = models.IntegerField(null=True)
+    season = models.ForeignKey(Season, models.SET_NULL, null=True)
 
     def __str__(self):
         return "%s - %s - %s" % (self.racer, self.rank, self.created_at,)
@@ -59,6 +71,7 @@ class Event(models.Model):
     address = models.TextField(null=True)
     start = models.DateField()
     end = models.DateField()
+    season = models.ForeignKey(Season, models.SET_NULL, null=True)
 
     def __str__(self):
         return '%s - %s' % (self.name, self.start,)
@@ -193,6 +206,7 @@ class LeagueInvite(models.Model):
 
     def __str__(self):
         return '%s - %s (%s)' % (self.league, self.email, self.key_code,)
+    
 
 def roundTime(dt=None, dateDelta=60):
     """Round a datetime object to a multiple of a timedelta
@@ -213,7 +227,6 @@ def roundTime(dt=None, dateDelta=60):
     rounding = (seconds+roundTo/2) // roundTo * roundTo
     return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
-##TODO: Deploy to AWS, need HTTPS, backups to S3
 ##TODO: Add a "Season" class, and associate with team/league
 ##TODO: Add current and last season stats for racer overview
 ##TODO: Add ability to add driver from 'undrafted list's

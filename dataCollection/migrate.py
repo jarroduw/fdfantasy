@@ -9,8 +9,16 @@ order = [
     'drift_race'
     ]
 
+base = 'https://fdfantasy.com/'
+base = 'http://localhost:8000/'
+
+with open('__sensitive_apiToken.txt') as fi:
+    token = fi.read().strip()
+
+header = {'Authorization': 'Token %s' % (token,)}
+
 eventDict = {}
-with open('../drift_event.csv') as fi:
+with open('backup/drift_event.csv') as fi:
     reader = csv.reader(fi)
     for r, row in enumerate(reader):
         if r != 0:
@@ -22,11 +30,11 @@ with open('../drift_event.csv') as fi:
                 'start': row[6],
                 'end': row[7]
             }
-            result = requests.post('http://fdfantasy.com/api/event/', json=obj)
+            result = requests.post(base + 'api/event/', json=obj, headers=header)
             eventDict[row[0]] = result.json()['id']
 
 rankingDict = {}
-with open('../drift_ranking.csv') as fi:
+with open('backup/drift_ranking.csv') as fi:
     reader = csv.reader(fi)
     for r, row in enumerate(reader):
         if r != 0:
@@ -38,7 +46,7 @@ with open('../drift_ranking.csv') as fi:
 
 
 racerDict = {}
-with open('../drift_racer.csv') as fi:
+with open('backup/drift_racer.csv') as fi:
     reader = csv.reader(fi)
     for r, row, in enumerate(reader):
         if r != 0:
@@ -55,17 +63,15 @@ with open('../drift_racer.csv') as fi:
                 'rank': rankingData[3],
                 'points': rankingData[4]
             }
-            result1 = requests.post('http://fdfantasy.com/api/racer/', json=obj)
-            print("Posted racer")
+            result1 = requests.post(base + 'api/racer/', json=obj, headers=header)
             if result1.status_code == 201:
-                print("posting rank")
                 racerDict[row[0]] = result1.json()['id']
                 rankObj['racer'] = result1.json()['id']
-                result2 = requests.post('http://fdfantasy.com/api/ranking/', json=rankObj)
+                result2 = requests.post(base + 'api/ranking/', json=rankObj, headers=header)
             else:
                 raise AttributeError("NO RESULT")
 
-with open('../drift_qualify.csv') as fi:
+with open('backup/drift_qualify.csv') as fi:
     reader = csv.reader(fi)
     for r, row in enumerate(reader):
         if r != 0:
@@ -76,9 +82,9 @@ with open('../drift_qualify.csv') as fi:
                 'racer': driver,
                 'rank': row[3]
             }
-            requests.post('http://fdfantasy.com/api/qualify/', json=obj)
+            requests.post(base + 'api/qualify/', json=obj, headers=header)
 
-with open('../drift_race.csv') as fi:
+with open('backup/drift_race.csv') as fi:
     reader = csv.reader(fi)
     for r, row in enumerate(reader):
         if r != 0:
@@ -97,4 +103,4 @@ with open('../drift_race.csv') as fi:
                 'event': event,
                 'event_round': rd
             }
-            result = requests.post('http://fdfantasy.com/api/race/', json=obj)
+            result = requests.post(base + 'api/race/', json=obj, headers=header)

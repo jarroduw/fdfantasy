@@ -23,7 +23,6 @@ from drift.forms import *
 class ActivateEmailView(View):
 
     def get(self, request, nonce):
-        print("Confirmed!")
         d = UserDetail.objects.filter(nonce=nonce)[0]
         d.activated = True
         d.save()
@@ -89,7 +88,6 @@ class RegisterAccountView(View):
         context = {
             'signUpForm': signUpForm,
             }
-        print(request.build_absolute_uri())
 
         return render(request, 'drift/register.html', context=context)
 
@@ -228,6 +226,8 @@ class CreateLeagueView(View):
     def post(self, request, league_id=None):
         """Save new or updated league"""
 
+        active_season = Season.objects.filter(active=True).latest('end')
+
         if league_id is not None:
             league = League.objects.get(id=league_id)
             form1 = LeagueForm(request.POST, instance=league)
@@ -241,6 +241,7 @@ class CreateLeagueView(View):
                 if form2.cleaned_data['draft'] >= timezone.now():
                     league = form1.save(commit=False)
                     league.race_official = request.user
+                    league.season = active_season
                     league.save()
                     
                     draft = form2.save(commit=False)
@@ -370,9 +371,11 @@ class RacerView(View):
     def get(self, request, pk):
         """Will return a racer view"""
 
+        active_season = Season.objects.filter(active=True).latest('end')
+
         context = {
             'driver': Racer.objects.get(pk=pk),
-            'ranking': Ranking.objects.filter(racer=pk).latest('created_at'),
+            'ranking': Ranking.objects.filter(racer=pk, season=active_season).latest('created_at'),
             }
         races = Race.objects.filter(top_seed=pk) | Race.objects.filter(bottom_seed=pk)
         races = races.order_by('event', '-event_round')
@@ -432,7 +435,6 @@ class CreateFantasyTeam(View):
                 validationRequired = False
             key_code = form.cleaned_data['key_code']
             key_code_obj = LeagueInvite.objects.filter(key_code=key_code).order_by('-created_at')
-            print(key_code_obj)
             if len(key_code_obj) > 0 or not validationRequired:
                 try:
                     key_code_obj = key_code_obj[0]
@@ -520,7 +522,8 @@ class ListEventsView(View):
     def get(self, request):
         """See a list of all events"""
 
-        events = Event.objects.all()
+        active_season = Season.objects.filter(active=True).latest('end')
+        events = Event.objects.filter(season=active_season)
 
         return render(request, 'drift/eventsList.html', {'events': events})
 
@@ -557,8 +560,9 @@ class MyFantasyTeams(View):
 
     def get(self, request):
 
+        active_season = Season.objects.filter(active=True).latest('end')
         if request.user.is_authenticated:
-            teams = Team.objects.filter(owner=request.user)
+            teams = Team.objects.filter(owner=request.user, league__season=active_season)
         else:
             teams = []
 
@@ -595,7 +599,9 @@ class ViewFantasyTeam(View):
 
         currentDate = timezone.now().date()
 
-        events = Event.objects.all()
+        team = Team.objects.get(id=team_id)
+
+        events = Event.objects.filter(season=team.league.season)
         nextEvent = events.filter(end__gte=currentDate).order_by('start')
         if len(nextEvent) > 0:
             nextEvent = nextEvent[0]
@@ -609,8 +615,6 @@ class ViewFantasyTeam(View):
                 eventData = events.latest('end')
         else:
             eventData = Event.objects.get(pk=event_id)
-
-        team = Team.objects.get(id=team_id)
 
         context = self._getActiveInactive(team_id, eventData)
 
