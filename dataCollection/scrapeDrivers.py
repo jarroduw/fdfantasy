@@ -1,5 +1,6 @@
 import requests
 import datetime
+import csv
 from bs4 import BeautifulSoup
 from baseScrape import Scraper
 
@@ -84,27 +85,44 @@ class DriverOverviewScraper(Scraper):
                     self.extracted.append(ds)
 
 if __name__ == '__main__':
-    dos = DriverOverviewScraper('drivers/all')
+    dos = DriverOverviewScraper('drivers/pro')
     dos.fetch()
     dos.checkAndParse()
     dos.extract()
 
     #dos.saveSoupToFile('test_driveroverview.html')
 
-    results1 = []
-    results2 = []
-    for racer in dos.extracted:
-        new = {}
-        new['driver_url_slug'] = racer.url_slug
-        new['team_name'] = racer.info['Team Name']
-        new['name'] = racer.name
-        new['car_number'] = racer.info['Car Number']
-        new['car_manuf'] = racer.info['Car Manufacturer']
-        results1.append(requests.post('http://localhost:8000/api/addRacer/', json=new))
-        
-        if results1[-1].status_code == 201:
-            new2 = {}
-            new2['racer'] = results1[-1].json()['id']
-            new2['rank'] = racer.ranks['2019RANK']
-            new2['points'] = racer.ranks['2019Points']
-            results2.append(requests.post('http://localhost:8000/api/addRanking/', json=new2))
+    racer_header = ['id', 'name', 'car_number', 'car_manuf', 'team_name', 'driver_url_slug', 'class']
+    ranking_header = ['racer', 'rank', 'points']
+    with open('racer.csv', 'w') as racer_fi:
+        with open('ranking.csv', 'w') as ranking_fi:
+            racer_writer = csv.writer(racer_fi)
+            racer_writer.writerow(racer_header)
+
+            ranking_writer = csv.writer(ranking_fi)
+            ranking_writer.writerow(ranking_header)
+            for url in ['pro', 'pro2']:
+                dos = DriverOverviewScraper('drivers/'+url)
+                dos.fetch()
+                dos.checkAndParse()
+                dos.extract()
+                for r, racer in enumerate(dos.extracted):
+                    new = {}
+                    new['id'] = r
+                    new['driver_url_slug'] = racer.url_slug
+                    new['team_name'] = racer.info['Team Name']
+                    new['name'] = racer.name
+                    new['car_number'] = racer.info['Car Number']
+                    new['car_manuf'] = racer.info['Car Manufacturer']
+                    new['class'] = url
+                    racer_writer.writerow([new[x] for x in racer_header])
+                    
+                    #results1.append(requests.post('http://localhost:8000/api/addRacer/', json=new))
+                    
+                    new2 = {}
+                    #new2['racer'] = results1[-1].json()['id']
+                    new2['racer'] = r
+                    new2['rank'] = racer.ranks['2019RANK']
+                    new2['points'] = racer.ranks['2019Points']
+                    #results2.append(requests.post('http://localhost:8000/api/addRanking/', json=new2))
+                    ranking_writer.writerow([new2[x] for x in ranking_header])

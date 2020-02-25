@@ -65,12 +65,16 @@ class ResultOverviewScraper(Scraper):
             rs._cleanData()
             self.extracted.append(rs)
 
-def postData(extracted, pro2=False):
+def postData(extracted, scrape_datetime, pro2=False):
+    with open('__sensitive_apiToken.txt') as fi:
+        token = fi.read().strip()
+    header = {'Authorization': 'Token %s' % (token,)}
     results_race = []
     results_q1 = []
     results_q2 = []
     for o in extracted:
         event = o.url_slug.replace('/results/', '/schedule/').replace('/pro2', '').replace('/pro', '')
+        
         qDic = {'schedule_url_slug': event}
         eventObj = requests.get('http://localhost:8000/api/event/', json=qDic)
         eventId = eventObj.json()['id']
@@ -103,13 +107,15 @@ def postData(extracted, pro2=False):
                         'top_seed': racer_t,
                         'bottom_seed': racer_b,
                         'winner': racer_w,
-                        'event_round': rd
+                        'event_round': rd,
+                        'pro2': pro2,
+                        'scraped': scrape_datetime
                     }
                     if pro2 and rd == 32:
                         raceDict_w['event_round'] = 16
                     result = requests.post(
                         'http://localhost:8000/api/race/',
-                        json=raceDict_w
+                        json=raceDict_w, headers=header
                     )
                     results_race.append(result)
                     if rd == 32:
@@ -119,8 +125,10 @@ def postData(extracted, pro2=False):
                             json={
                                 'event': eventId,
                                 'racer': racer_t,
-                                'rank': ts['rank']
-                            }
+                                'rank': ts['rank'],
+                                'pro2': pro2,
+                                'scraped': scrape_datetime
+                            }, headers=header
                         )
                         results_q1.append(qualify1)
                         if bs['url'] != '/drivers/bye':
@@ -129,8 +137,10 @@ def postData(extracted, pro2=False):
                                 json={
                                     'event': eventId,
                                     'racer': racer_b,
-                                    'rank': bs['rank']
-                                }
+                                    'rank': bs['rank'],
+                                    'pro2': pro2,
+                                    'scraped': scrape_datetime
+                                }, headers=header
                             )
                             results_q2.append(qualify2)
             except KeyError:
@@ -138,11 +148,12 @@ def postData(extracted, pro2=False):
 
 
 if __name__ == '__main__':
+    scrape_datetime = format(datetime.datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
     ros_pro = ResultOverviewScraper('standings/2019/pro')
     ros_pro.fetch()
     ros_pro.checkAndParse()
     ros_pro.extract()
-    postData(ros_pro.extracted)
+    postData(ros_pro.extracted, scrape_datetime)
 
     #ros_pro.saveSoupToFile('test_standingsoverview_pro.html')
 
@@ -150,4 +161,4 @@ if __name__ == '__main__':
     ros_2.fetch()
     ros_2.checkAndParse()
     ros_2.extract()
-    postData(ros_2.extracted, pro2=True)
+    postData(ros_2.extracted, scrape_datetime, pro2=True)

@@ -58,6 +58,7 @@ class Ranking(models.Model):
     rank = models.IntegerField()
     points = models.IntegerField(null=True)
     season = models.ForeignKey(Season, models.SET_NULL, null=True)
+    scraped = models.DateTimeField()
 
     def __str__(self):
         return "%s - %s - %s" % (self.racer, self.rank, self.created_at,)
@@ -82,6 +83,8 @@ class Qualify(models.Model):
     event = models.ForeignKey(Event, models.CASCADE)
     racer = models.ForeignKey(Racer, models.CASCADE)
     rank = models.IntegerField()
+    pro2 = models.BooleanField(default=False)
+    scraped = models.DateTimeField()
 
     def __str__(self):
         return '%s - %s - %s' % (self.event, self.racer, self.rank,)
@@ -94,6 +97,8 @@ class Race(models.Model):
     top_seed = models.ForeignKey(Racer, models.CASCADE, related_name='%(class)s_racer_top_seed')
     bottom_seed = models.ForeignKey(Racer, models.CASCADE, related_name='%(class)s_racer_bottom_seed', null=True)
     winner = models.ForeignKey(Racer, models.CASCADE, related_name='%(class)s_racer_winner', null=True)
+    pro2 = models.BooleanField(default=False)
+    scraped = models.DateTimeField()
 
     def __str__(self):
         return '%s (%s) - %s' % (self.event, self.event_round, self.winner,)

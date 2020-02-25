@@ -534,18 +534,31 @@ class EventView(View):
 
         event = Event.objects.get(pk=pk)
 
-        qualify = Qualify.objects.filter(event=pk).order_by('rank')
+        qualify_latest = Qualify.objects.latest('scraped')
+        qualify = Qualify.objects.filter(event=pk, scraped=qualify_latest.scraped).order_by('rank')
+        qualify_pro = qualify.filter(pro2=False)
+        qualify_pro2 = qualify.filter(pro2=True)
 
-        races = Race.objects.filter(event=pk).order_by('-event_round')
-        races2 = {
-            '32': races.filter(event_round = 32),
-            '16': races.filter(event_round = 16),
-            '8': races.filter(event_round=8),
-            '4': races.filter(event_round=4),
-            '2': races.filter(event_round=2)
+        races_latest = Race.objects.latest('scraped')
+        races = Race.objects.filter(event=pk, scraped=races_latest.scraped).order_by('-event_round')
+        races_pro2 = races.filter(pro2=True)
+        races_pro = races.filter(pro2=False)
+        races2_pro = {
+            '32': races_pro.filter(event_round = 32),
+            '16': races_pro.filter(event_round = 16),
+            '8': races_pro.filter(event_round=8),
+            '4': races_pro.filter(event_round=4),
+            '2': races_pro.filter(event_round=2)
+        }
+        races2_pro2 = {
+            '32': races_pro2.filter(event_round = 32),
+            '16': races_pro2.filter(event_round = 16),
+            '8': races_pro2.filter(event_round=8),
+            '4': races_pro2.filter(event_round=4),
+            '2': races_pro2.filter(event_round=2)
         }
 
-        context = {'event': event, 'qualify': qualify, 'races': races2}
+        context = {'event': event, 'qualify_pro': qualify_pro, 'qualify_pro2': qualify_pro2, 'races_pro': races2_pro, 'races_pro2': races2_pro2}
         
         return render(request, 'drift/event.html', context)
 

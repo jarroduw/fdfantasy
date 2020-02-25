@@ -1,0 +1,77 @@
+id,name,car_number,car_manuf,team_name,driver_url_slug,class
+0,Alec Hohnadell,118,Nissan,Hohnadell Racing,/drivers/alec-hohnadell,pro
+1,Alex Heilbrunn,17,BMW,Team IMR,/drivers/alex-heilbrunn,pro
+2,Aurimas Bakchis,723,Nissan,Bakchis Motorsports,/drivers/aurimas-bakchis,pro
+3,Austin Meeks,316,Cadillac,Meeks Drift,/drivers/austin-meeks,pro
+4,Chelsea DeNofa,88,Ford,RTR Motorsports,/drivers/chelsea-denofa,pro
+5,Chris Forsberg,64,Nissan,Chris Forsberg Racing,/drivers/chris-forsberg,pro
+6,Daijiro Yoshihara,9,Toyota,Team DAI.,/drivers/daijiro-yoshihara,pro
+7,Dan Burkett,34,Toyota,RAD Industries,/drivers/dan-burkett,pro
+8,Dean Kearney,43,Dodge,Bridges Racing,/drivers/dean-kearney,pro
+9,Dirk Stratton,33,Chevrolet,Stratton Racing,/drivers/dirk-stratton,pro
+10,Dylan Hughes,129,BMW,Huddy Racing,/drivers/dylan-hughes,pro
+11,Federico Sceriffo,117,Ferrari,FFF Drifting Department,/drivers/federico-sceriffo,pro
+12,Forrest Wang,808,Nissan,Get Nuts Lab,/drivers/forrest-wang,pro
+13,Fredric Aasbo,151,Toyota,Papadakis Racing,/drivers/fredric-aasbo,pro
+14,James Deane,130,Nissan,Worthouse Drift Team,/drivers/james-deane,pro
+15,Jeff Jones,818,Nissan,Jeff Jones Racing,/drivers/jeff-jones,pro
+16,Jhonnattan Castro,717,Toyota,Jhonnattan Castro,/drivers/jhonnattan-castro,pro
+17,Joao Barion,357,Chevrolet,Nando Drift Team,/drivers/joao-barion,pro
+18,Justin Pawlak,13,Ford,Pawlak Racing,/drivers/justin-pawlak,pro
+19,Kazuya Taguchi,123,Nissan,,/drivers/kazuya-taguchi,pro
+20,Ken Gushi,21,Toyota,Greddy Racing/Ken Gushi motorsports,/drivers/ken-gushi,pro
+21,Kevin Lawrence,352,Nissan,Enjuku Racing,/drivers/kevin-lawrence,pro
+22,Kyle Mohan,99,Mazda,Kyle Mohan Racing,/drivers/kyle-mohan,pro
+23,Manuel Vacca,19,BMW,Hp Garage,/drivers/manuel-vacca,pro
+24,Matt Coffman,959,Nissan,Coffman Racing,/drivers/matt-coffman,pro
+25,Matt Field,777,Chevrolet,Drift Cave Motorsports,/drivers/matt-field,pro
+26,Michael Essa,101,BMW,Essa Autosport,/drivers/michael-essa,pro
+27,Mitch Larner,11,Nissan,Get Nuts Lab,/drivers/mitch-larner,pro
+28,Patrick Goodin,46,Nissan,Drift Cave,/drivers/patrick-goodin,pro
+29,Piotr Wiecek,215,Nissan,Worthouse Drift Team,/drivers/piotr-wiecek,pro
+30,Ryan Litteral,909,Nissan,KORUWORKS,/drivers/ryan-litteral,pro
+31,Ryan Tuerck,411,Toyota,Ryan Tuerck Racing,/drivers/ryan-tuerck,pro
+32,Sebastien Gauthier,111,Nissan,SSG Motorsport,/drivers/sebastien-gauthier,pro
+33,Taylor Hull,82,Cadillac,Asphalt Anarchy,/drivers/taylor-hull,pro
+34,Travis Reeder,77,Chevrolet,Napoleon Motorsports,/drivers/travis-reeder,pro
+35,Vaughn Gittin Jr,25,Ford,RTR Motorsports,/drivers/vaughn-gittin-jr,pro
+0,Aaron J Muss,6,BMW,Jaeger Motorsports,/drivers/aaron-j-muss,pro2
+1,Adam Knapik,51,Nissan,KnapikRacing,/drivers/adam-knapik,pro2
+2,Adam Lizotte-Ziesler,5,Nissan,LZMFG,/drivers/adam-lizotte-ziesler,pro2
+3,Alec Robbins,35,Nissan,Alec Robbins Racing,/drivers/alec-robbins,pro2
+4,Alex Schlagel,87,Nissan,Drift HQ,/drivers/alex-schlagel,pro2
+5,Amanda Sorensen,112,BMW,Sorensen Motorsports,/drivers/amanda-sorensen,pro2
+6,Andrew Schulte,216,Nissan,Harajuku Heartbreak,/drivers/andrew-schulte,pro2
+7,Andy Hateley,98,BMW,Hateley Motorsports,/drivers/andy-hateley,pro2
+8,Blake Olsen,66,BMW,BlakeOlsenMotorsport,/drivers/blake-olsen,pro2
+9,Branden Sorensen,513,BMW,Sorensen Motorsports,/drivers/branden-sorensen,pro2
+10,Brandon McDowell,407,Nissan,ISR Performance,/drivers/brandon-mcdowell,pro2
+11,Dalton Gernhart,858,Nissan,858 Motorsports,/drivers/dalton-gernhart,pro2
+12,Daniel Stuke,527,Nissan,Stuke Racing,/drivers/daniel-stuke,pro2
+13,Derek Madison,27,Nissan,Team Infamous,/drivers/derek-madison,pro2
+14,Dmitriy Brutskiy,85,BMW,Isc_suspension of north america,/drivers/dmitriy-brutskiy,pro2
+15,Donovan Brockway,418,BMW,Red Baron Racing/ 418,/drivers/donovan-brockway,pro2
+16,Dustin Miles,678,Acura,Miles of Style racing,/drivers/dustin-miles,pro2
+17,Garrett Denton,401,Nissan,Denton Motorsport,/drivers/garrett-denton,pro2
+18,Geoff Donati,624,Nissan,Donati Racing,/drivers/geoff-donati,pro2
+19,George Kiriakopoulos,219,Nissan,Modified Performance,/drivers/george-kiriakopoulos,pro2
+20,Hooman Rahimi,321,Nissan,I'm Only Hooman Drift Team,/drivers/hooman-rahimi,pro2
+21,Jonathan Hurst,16,Infiniti,Cash Racing,/drivers/jonathan-hurst,pro2
+22,Josh Robinson,530,Holden,Texas Drift Academy,/drivers/josh-robinson,pro2
+23,Karolina Pilarczyk,555,Nissan,CK Drift Team,/drivers/karolina-pilarczyk,pro2
+24,Kelsey Rowlings,42,Nissan,Drift Chick,/drivers/kelsey-rowlings,pro2
+25,Kenric Meyer,22,BMW,Kenric Meyer,/drivers/kenric-meyer,pro2
+26,Kevin Phillips,954,Nissan,KPR powered by Jackson Performance,/drivers/kevin-phillips,pro2
+27,Matt Haugen,92,Nissan,Haugen Racing,/drivers/matt-haugen,pro2
+28,Nate Snyder,626,Nissan,Sv performance team,/drivers/nate-snyder,pro2
+29,Ola Jaeger,153,Toyota,Team Japan Auto,/drivers/ola-jaeger,pro2
+30,Phil Oddo,405,Nissan,Phil Oddo,/drivers/phil-oddo,pro2
+31,Riley Sexsmith,7,Toyota,NV Auto,/drivers/riley-sexsmith,pro2
+32,Rob Carlsen,32,Nissan,Carlsen Racing,/drivers/rob-carlsen,pro2
+33,Rome Charpentier,171,BMW,Imaginegarage,/drivers/rome-charpentier,pro2
+34,Sean Adriano,562,Nissan,Sean Adriano Racing,/drivers/sean-adriano,pro2
+35,Shaun Doom,213,Nissan,Deep's Garage,/drivers/shaun-doom,pro2
+36,Tim Cobb,110,Nissan,,/drivers/tim-cobb,pro2
+37,Trenton Beechum,999,Ford,Beechum Racing,/drivers/trenton-beechum,pro2
+38,Troy Manners,109,Nissan,Troy Manners Racing,/drivers/troy-manners,pro2
+39,Tyler Grimsley,188,Nissan,TYGR Racing,/drivers/tyler-grimsley,pro2
