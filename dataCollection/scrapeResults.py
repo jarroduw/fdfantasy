@@ -65,8 +65,8 @@ class ResultOverviewScraper(Scraper):
             rs._cleanData()
             self.extracted.append(rs)
 
-def postData(extracted, scrape_datetime, pro2=False):
-    with open('__sensitive_apiToken.txt') as fi:
+def postData(extracted, scrape_datetime, pro2=False, base='http://localhost:8000/', tokenPath='__sensitive_apiToken.txt'):
+    with open(tokenPath)) as fi:
         token = fi.read().strip()
     header = {'Authorization': 'Token %s' % (token,)}
     results_race = []
@@ -76,7 +76,7 @@ def postData(extracted, scrape_datetime, pro2=False):
         event = o.url_slug.replace('/results/', '/schedule/').replace('/pro2', '').replace('/pro', '')
         
         qDic = {'schedule_url_slug': event}
-        eventObj = requests.get('http://localhost:8000/api/event/', json=qDic)
+        eventObj = requests.get(base + 'api/event/', json=qDic)
         eventId = eventObj.json()['id']
         for rd in [32, 16, 8, 4, 2]:
             try:
@@ -91,16 +91,16 @@ def postData(extracted, scrape_datetime, pro2=False):
                         ts = loser
                         bs = winner
                     racer_t = requests.get(
-                        'http://localhost:8000/api/racer/', json={'driver_url_slug': ts['url']}
+                        base + 'api/racer/', json={'driver_url_slug': ts['url']}
                     ).json()['id']
                     if bs['url'] != '/drivers/bye':
                         racer_b = requests.get(
-                            'http://localhost:8000/api/racer/', json={'driver_url_slug': bs['url']}
+                            base + 'api/racer/', json={'driver_url_slug': bs['url']}
                         ).json()['id']
                     else:
                         racer_b = None
                     racer_w = requests.get(
-                        'http://localhost:8000/api/racer/', json={'driver_url_slug': winner['url']}
+                        base + 'api/racer/', json={'driver_url_slug': winner['url']}
                     ).json()['id']
                     raceDict_w = {
                         'event': eventId,
@@ -114,14 +114,14 @@ def postData(extracted, scrape_datetime, pro2=False):
                     if pro2 and rd == 32:
                         raceDict_w['event_round'] = 16
                     result = requests.post(
-                        'http://localhost:8000/api/race/',
+                        base + 'api/race/',
                         json=raceDict_w, headers=header
                     )
                     results_race.append(result)
                     if rd == 32:
                         print("Writing qualify")
                         qualify1 = requests.post(
-                            'http://localhost:8000/api/qualify/',
+                            base + 'api/qualify/',
                             json={
                                 'event': eventId,
                                 'racer': racer_t,
@@ -133,7 +133,7 @@ def postData(extracted, scrape_datetime, pro2=False):
                         results_q1.append(qualify1)
                         if bs['url'] != '/drivers/bye':
                             qualify2 = requests.post(
-                                'http://localhost:8000/api/qualify/',
+                                base + 'api/qualify/',
                                 json={
                                     'event': eventId,
                                     'racer': racer_b,

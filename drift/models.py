@@ -44,6 +44,7 @@ class Racer(models.Model):
     driver_url_slug = models.TextField()
     car_number = models.IntegerField()
     car_manuf = models.TextField()
+    pro2 = models.BooleanField(default=False)
 
     def getAllPoints(self):
         data = ScoringEvent.objects.filter(racer=self.id)
