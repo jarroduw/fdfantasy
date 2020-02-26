@@ -150,15 +150,17 @@ def getUpcoming(user):
         ]
     eventLi.extend(draft)
 
-    races = Event.objects.filter(end__lte=timeNow).order_by('start')[0:3]
-    races = [
-        UpcomingEvent(
-            x.name,
-            x.start,
-            reverse('drift:viewEvent', args=[x.id])
-            ) for x in races
-        ]
-    eventLi.extend(races)
+    races = Event.objects.filter(end__gte=timeNow).order_by('start')
+    if len(races) > 0:
+        races = races[0:min([len(races), 3])]
+        races = [
+            UpcomingEvent(
+                x.name,
+                x.start,
+                reverse('drift:viewEvent', args=[x.id])
+                ) for x in races
+            ]
+        eventLi.extend(races)
 
     return eventLi
 

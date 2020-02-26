@@ -51,18 +51,22 @@
                         <h3 class="panel-title">Feed</h3>
                     </div>
                     <div class="panel-body">
-                        {% for note in notifications %}
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <div class="panel panel-default">
-                                        <div class="panel-heading">
-                                            {{note.sender}} ({{note.created_at|timesince}} ago) {% if note.isModified %}(edited {{note.modified_at|timesince}} ago){% endif %}
+                        {% if notifications|length > 0 %}
+                            {% for note in notifications %}
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                {{note.sender}} ({{note.created_at|timesince}} ago) {% if note.isModified %}(edited {{note.modified_at|timesince}} ago){% endif %}
+                                            </div>
+                                            <div class="panel-body">{{note.msg|safe}}</div>
                                         </div>
-                                        <div class="panel-body">{{note.msg|safe}}</div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        {% else %}
+                                <p>You have no notifications!</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -72,11 +76,15 @@
                         <h3 class="panel-title">Upcoming</h3>
                     </div>
                     <div class="panel-body">
-                        <ul>
-                            {% for event in upcoming %}
-                                <li><a href="{{event.url}}">{{event.date}} - {{event.title}}</a></li>
-                            {% endfor %}
-                        </ul>
+                        {% if upcoming|length > 0 %}
+                            <ul>
+                                {% for event in upcoming %}
+                                    <li><a href="{{event.url}}">{{event.date}} - {{event.title}}</a></li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>You have nothing upcoming!</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
