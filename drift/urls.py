@@ -1,4 +1,7 @@
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.urls import path
+from django.views.generic import TemplateView
+from django.views.generic.base import RedirectView
 from rest_framework.authtoken import views as rf_views
 
 from . import views
@@ -42,4 +45,6 @@ urlpatterns = [
     path('api/activate/', api.ActivateDriverApi.as_view(), name='activateDriver'),
     path('api/getPoints/<int:event>/<int:team>/<int:racer>', api.PointsApi.as_view(), name='points'),
     path('api/token-auth/', rf_views.obtain_auth_token),
+    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
+    path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico')), name='favicon'),
 ]
