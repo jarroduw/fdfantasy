@@ -15,6 +15,7 @@
         <li>FD Bio: <a href="https://formulad.com{{driver.driver_url_slug}}">https://formulad.com{{driver.driver_url_slug}}</a></li>
         <li>Ranking: {{ranking.rank}}</li>
         <li>Points: {{ranking.points}}</li>
+        <li>Class: {% if driver.pro2 == True %} Pro2 {% else %} Pro {% endif %}</li>
     </ul>
 
     <h4>Wins</h4>

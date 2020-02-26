@@ -1,5 +1,7 @@
 from fdfantasy.settings import *
 
+DEBUG = False
+
 ROOT_URL = 'fdfantasy.com'
 
 STATIC_ROOT = '/var/www/fdfantasy/static/'

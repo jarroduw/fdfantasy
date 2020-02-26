@@ -8,14 +8,15 @@
 
 {% block content %}
     <table class="table">
-        <thead><td>Driver</td><td>Team</td><td>Number</td><td>Manufacturer</td><td>Url Slug</td></thead>
+        <thead><td>Driver</td><td>Team</td><td>Number</td><td>Manufacturer</td><td>Class</td><td>FD Bio</td></thead>
         {% for driver in drivers %}
             <tr>
                 <td><a href="{% url 'drift:viewRacer' driver.id %}">{{driver.name}}</a></td>
                 <td>{{driver.team_name}}</td>
                 <td>{{driver.car_number}}</td>
                 <td>{{driver.car_manuf}}</td>
-                <td>{{driver.driver_url_slug}}</td>
+                <td>{% if driver.pro2 == True %} Pro2 {% else %} Pro {% endif %}</td>
+                <td><a href="https://formulad.com/drivers/{{driver.driver_url_slug}}">FD Bio</a></a></td>
             </tr>
         {% endfor %}
     </table>
