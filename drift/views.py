@@ -6,19 +6,23 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, Us
 from django.core.mail import send_mail
 
 from django.db.models import Sum
-from django.http import HttpResponseRedirect
+from django.db import transaction
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render
+from django_tables2 import RequestConfig
 from django.template import Context
 from django.template.loader import get_template
 from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.contrib.auth import authenticate, login
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 from django.conf import settings
 from drift.models import *
 from drift.forms import *
+from drift.tables import *
 
 class ActivateEmailView(View):
 
@@ -679,5 +683,188 @@ class ViewFantasyTeam(View):
 
         return {'team': teamData, 'active': active, 'inactive': inactive}
 
+class AcquireDriver(View):
+
+    def get(self, request, league_id):
+
+        if not request.user.is_authenticated:
+            return HttpResponseRedirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+        league = League.objects.get(pk=league_id)
+        teams = league.team_set.all()
+        owners = [team.owner for team in teams]
+        if request.user not in owners:
+            raise django.core.exceptions.PermissionDenied
+
+        ownerTeam = request.user.team_set.filter(league=league_id)[0]
+
+        unavailableList = getUnavailableDrivers(league)
+        for team in league.team_set.all():
+            for racer in team.racers.all():
+                unavailableList.append(racer.id)
+
+        available = Racer.objects.all().exclude(id__in=unavailableList)
+        availableTable = RacerTableLeague(available, team=ownerTeam)
+        RequestConfig(request, paginate=False).configure(availableTable)
+
+        waiverDrivers = ownerTeam.waiverwire_set.filter(active=True)
+
+        context = {
+            'available': availableTable,
+            'owner': request.user,
+            'team': ownerTeam,
+            'league': league,
+            'waiverDrivers': waiverDrivers,
+            'waiverOrder': ownerTeam.waiverpriority.getLeagueOrderTeams()
+        }
+
+        return render(request, 'drift/acquireDriver.html', context)
+
+def getUnavailableDrivers(league):
+    unavailableList = []
+    for team in league.team_set.all():
+        for racer in team.racers.all():
+            unavailableList.append(racer.id)
+    return unavailableList
+
+class AddDriverToWaiverWire(View):
+
+    def post(self, request, driver_id, team_id):
+        """This will be where we save the person to drop"""
+        errorMsg = ""
+
+        team = Team.objects.get(pk=team_id)
+        if team.owner != request.user:
+            raise django.core.exceptions.PermissionDenied
+
+        racerToAdd = Racer.objects.get(pk=driver_id)
+        league = team.league
+        if racerToAdd.id in getUnavailableDrivers(league):
+            return HttpResponseBadRequest()
+
+        waiverPriority = team.waiverpriority.firstInOrder()
+
+        pks = request.POST.getlist("drop")
+        added = False
+        remaining = len(team.racers.all()) - len(pks)
+        if remaining < league.max_racers:
+            with transaction.atomic():
+                for pk in pks:
+                    racer = Racer.objects.get(pk=pk)
+                    if racer in team.racers.all():
+                        if waiverPriority == True:
+                            team.racers.remove(racer)
+                            if not added:
+                                addRacerToTeam(team, racerToAdd)
+                                added = True
+                        else:
+                            if not added:
+                                ww = WaiverWire.objects.create(
+                                    team=team, racer=racerToAdd
+                                )
+                                ww.save()
+                                added = True
+                            wwr = WaiverWireRemove.objects.create(
+                                waiver=ww,
+                                racer=racer
+                            )
+                            wwr.save()
+                    else:
+                        raise django.core.exceptions.PermissionDenied
+                return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
+
+        else:
+            diff = len(team.racers.all()) - league.max_racers + 1
+            if diff == 1:
+                msg = "1 driver"
+            else:
+                msg = "%s drivers" % (diff,)
+            errorMsg += "You have to select at least %s to drop before you can add this driver." % (msg,)
+
+        racers = RacerTableDrop(team.racers.all())
+        RequestConfig(request, paginate=False).configure(racers)
+
+        context = {
+            'team': team,
+            'racers': racers,
+            'league': team.league,
+            'driver': racerToAdd,
+            'waiverOrder': team.waiverpriority.getLeagueOrderTeams(),
+            'errorMsg': errorMsg
+        }
+
+        return render(request, 'drift/waiveRacer.html', context)
+
+    def get(self, request, driver_id, team_id):
+
+        team = Team.objects.get(pk=team_id)
+        if team.owner != request.user:
+            raise django.core.exceptions.PermissionDenied
+
+        waiverPriority = team.waiverpriority
+        
+        driver = Racer.objects.get(pk=driver_id)
+        league = team.league
+        if driver.id in getUnavailableDrivers(league):
+            return HttpResponseBadRequest()
+
+        teamsInLeague = [team.id for team in league.team_set.all()]
+
+        ##If no chance you'll get the driver
+        claimed_li = WaiverWire.objects.filter(racer=driver_id, active=False, team__in=teamsInLeague)
+        waiverWinners = [x for x in claimed_li if x.priority < waiverPriority.priority]
+        claimed = False
+        if len(waiverWinners) > 0:
+            claimed = True
+
+        waiverTime = timezone.now() + datetime.timedelta(league.waiver_hours*60*60)
+        print("Write before does not exist")
+        ##If waiver already exists, just bypass things
+        try:
+            wwExists = len(team.waiverwire_set.filter(active=True, racer=driver)) > 0
+            if wwExists:
+                return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
+        except ObjectDoesNotExist:
+            wwExists = False
+        print(wwExists)
+
+        ##Guaranteed to acquire acquire, change waiver order, redirect
+        notFull = len(team.racers.all()) < league.max_racers
+        waiverOrder = waiverPriority.getLeagueOrderTeams()
+        waiverPriorityWin = waiverPriority.firstInOrder()
+        with transaction.atomic():
+            if notFull and waiverPriorityWin:
+                addRacerToTeam(team, driver, waiverPriority)
+                return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
+
+            ##Team not full, but not first in waiver priority: 
+            if notFull and not waiverPriorityWin:
+                ww = addRacerToWaiver(team, driver)
+                return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
+
+        racers = RacerTableDrop(team.racers.all())
+        RequestConfig(request, paginate=False).configure(racers)
+
+        context = {
+            'team': team,
+            'racers': racers,
+            'league': league,
+            'driver': driver,
+            'waiverOrder': waiverOrder
+        }
+
+        return render(request, 'drift/waiveRacer.html', context)
+
+
+##TODO: Need to add a "AddDriverToWaiver" view that:
+##  4)   If claimed by lower priority, notify that waiver holder that they have been pre-empted
+##  6) If waiver priority is not 1, then add to waiver list and notify user in app
+
+##TODO: Need to add a "check waiver wire" view/api/function that:
+## loops through waiver claims that are expired
+##  1) Checks for expired waivers
+##  IF EXPIRED:
+##    2) assign driver to highest priority team
+##    3) change waiver priority (change team priority to max within league + 1)
 
 ##TODO: Need draft view (JS)

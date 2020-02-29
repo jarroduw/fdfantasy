@@ -2,6 +2,7 @@ import datetime
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your models here.
 class Season(models.Model):
@@ -22,6 +23,9 @@ class League(models.Model):
     race_official = models.ForeignKey(User, models.SET_NULL, blank=True, null=True)
     key_required = models.BooleanField(default=True, verbose_name="Require a key to join?")
     season = models.ForeignKey(Season, models.SET_NULL, null=True)
+    max_racers = models.IntegerField(default=12)
+    waiver_hours = models.IntegerField(default=24)
+    draft_interval_minutes = models.IntegerField(default=4)
 
     def __str__(self):
         return "%s-%s" % (self.race_official, self.name,)
@@ -212,7 +216,71 @@ class LeagueInvite(models.Model):
 
     def __str__(self):
         return '%s - %s (%s)' % (self.league, self.email, self.key_code,)
-    
+
+class WaiverWire(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    team = models.ForeignKey(Team, models.CASCADE)
+    racer = models.ForeignKey(Racer, models.CASCADE)
+    active = models.BooleanField(default=True)
+
+    def getExpired(self):
+        wait = self.team.league.waiver_hours
+        return timezone.now() >= self.created_at + datetime.timedelta(hours=wait)
+
+    def getTimeUntilExpire(self):
+        wait = self.team.league.waiver_hours
+        return self.created_at + datetime.timedelta(hours=wait)
+
+    def getActive(self):
+        return WaiverWire.objects.filter(team=self.team, active=True)
+
+    def getAllRemovals(self):
+        teams = self.waiverwireremove_set.all()
+        teams = [x.racer.name for x in teams]
+        return ", ".join(teams)
+
+    def __str__(self):
+        return '%s, %s (%s)' % (self.team, self.racer, self.created_at)
+
+class WaiverWireRemove(models.Model):
+    """For racers who are set to be removed when waive completed"""
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    waiver = models.ForeignKey(WaiverWire, models.CASCADE)
+    racer = models.ForeignKey(Racer, models.CASCADE)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return '%s - %s (%s)' % (self.waiver.team, self.racer.name, self.created_at,)
+
+class WaiverPriority(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    team = models.OneToOneField(Team, models.CASCADE)
+    priority = models.IntegerField()
+
+    def setOrderToMax(self):
+        self.priority = 1 + max([x.priority for x in self.getLeagueOrder()])
+        self.save()
+
+    def firstInOrder(self):
+        otherPriority = self.getLeagueOrderTeams()
+        if self.team == otherPriority[0]:
+            return True
+        return False
+
+    def getLeagueOrderTeams(self):
+        waiverOrder = self.getLeagueOrder()
+        teamOrder = [x.team for x in waiverOrder]
+        return teamOrder
+
+    def getLeagueOrder(self):
+        teamsInLeague = [x for x in self.team.league.team_set.all()]
+        return WaiverPriority.objects.filter(team__in=teamsInLeague).order_by('priority')
+
+    def __str__(self):
+        return '%s - %s' % (self.team, self.priority,)
 
 def roundTime(dt=None, dateDelta=60):
     """Round a datetime object to a multiple of a timedelta
@@ -233,7 +301,6 @@ def roundTime(dt=None, dateDelta=60):
     rounding = (seconds+roundTo/2) // roundTo * roundTo
     return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
-##TODO: Add a "Season" class, and associate with team/league
 ##TODO: Add current and last season stats for racer overview
 ##TODO: Add ability to add driver from 'undrafted list's
 ##TODO: Add draft?

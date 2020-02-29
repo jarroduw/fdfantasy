@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Acquire Driver - Waive Existing{% endblock title %}
+
+{% block title_page %}
+    <h3>Acquire Driver and Waive an Existing Driver</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <p>To complete your waiver request, please select a driver to remove. Your league only allows {{league.max_racers}} drivers on a team at a time.</p>
+    <p>The waiver order is:</p>
+    <ol>
+        {% for team in waiverOrder %}
+            <li>{{team.name}} ({{team.owner.username}}){% if team.owner == request.user %}*{% endif %}</li>
+        {% endfor %}
+    </ol>
+
+    {% if errorMsg %}
+        <div class="alert alert-danger" role="alert">{{errorMsg}}</div>
+     {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        {% render_table racers %}
+        <input type="submit" value="Drop Racers">
+    </form>
+    
+{% endblock content %}

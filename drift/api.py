@@ -1,6 +1,8 @@
+from django.db import transaction
+
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -162,3 +164,48 @@ class NotificationApi(APIView):
 def getNotifications(user):
     notes = Notification.objects.filter(user=user)
     return notes
+
+class CheckWaiverWire(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        self.checkWaiverWire()
+        return Response({'msg': 'success'})
+
+    def checkWaiverWire(self):
+        waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
+        waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
+        while len(waivers) > 0:
+            waiver = waivers[0]
+            print(waiver, waiver.getExpired(), waiver.team.waiverpriority.firstInOrder())
+            with transaction.atomic():
+                addRacerToTeam(waiver.team, waiver.racer)
+                for removeRacer in waiver.waiverwireremove_set.filter(active=True):
+                    waiver.team.racers.remove(removeRacer.racer)
+                    removeRacer.active = False
+                    removeRacer.save()
+            waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
+            waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
+
+def addRacerToWaiver(team, racer):
+    try:
+        existing = team.waiverwire.filter(active=True)
+        ww = None
+    except django.core.exceptions.ObjectDoesNotExist:
+            
+        ww = WaiverWire.objects.create(
+            team=team,
+            racer=racer
+        )
+        ww.save()
+    return ww
+
+def addRacerToTeam(team, racer):
+    teamsInLeague = [team.id for team in team.league.team_set.all()]
+    team.racers.add(racer)
+    team.save()
+    waiver = team.waiverwire_set.filter(racer=racer)
+    for w in waiver:
+        w.active=False
+        w.save()
+    team.waiverpriority.setOrderToMax()
