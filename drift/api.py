@@ -1,4 +1,8 @@
 from django.db import transaction
+from django.conf import settings
+from django.core.mail import send_mail
+from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import get_template
 
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
@@ -188,16 +192,37 @@ class CheckWaiverWire(APIView):
             waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
 
 def addRacerToWaiver(team, racer):
+    skipWaiver = False
     try:
-        existing = team.waiverwire.filter(active=True)
-        ww = None
-    except django.core.exceptions.ObjectDoesNotExist:
-            
+        existing = team.waiverwire_set.filter(active=True, racer=racer)
+        if len(existing) > 0:
+            skipWaiver = True
+            ww = None
+    except ObjectDoesNotExist:
+        pass
+    if not skipWaiver:
         ww = WaiverWire.objects.create(
             team=team,
             racer=racer
         )
         ww.save()
+        email_msg = get_template(
+            'drift/email_driverAddedToWaiver.html'
+            ).render({
+                'racer': racer,
+                'team': team,
+                })
+        send_mail(
+            "Player Added to Waiver Wire",
+            email_msg,
+            settings.DEFAULT_FROM_EMAIL,
+            [team.owner.email]
+            )
+        note = Notification.objects.create(
+            user=team.owner,
+            msg='You added %s to the waiver wire!' % (racer.name,)
+        )
+        note.save()
     return ww
 
 def addRacerToTeam(team, racer):
@@ -209,3 +234,17 @@ def addRacerToTeam(team, racer):
         w.active=False
         w.save()
     team.waiverpriority.setOrderToMax()
+    email_msg = get_template(
+        'drift/email_driverAdded.html'
+        ).render({'racer': racer})
+    send_mail(
+        "Player Added to Team",
+        email_msg,
+        settings.DEFAULT_FROM_EMAIL,
+        [team.owner.email]
+        )
+    note = Notification.objects.create(
+        user=team.owner,
+        msg='You added %s to your team!' % (racer.name,)
+    )
+    note.save()

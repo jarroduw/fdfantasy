@@ -23,6 +23,7 @@ from django.conf import settings
 from drift.models import *
 from drift.forms import *
 from drift.tables import *
+from drift.api import *
 
 class ActivateEmailView(View):
 
@@ -759,10 +760,7 @@ class AddDriverToWaiverWire(View):
                                 added = True
                         else:
                             if not added:
-                                ww = WaiverWire.objects.create(
-                                    team=team, racer=racerToAdd
-                                )
-                                ww.save()
+                                ww = addRacerToWaiver(team, racerToAdd)
                                 added = True
                             wwr = WaiverWireRemove.objects.create(
                                 waiver=ww,

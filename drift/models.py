@@ -279,6 +279,10 @@ class WaiverPriority(models.Model):
         teamsInLeague = [x for x in self.team.league.team_set.all()]
         return WaiverPriority.objects.filter(team__in=teamsInLeague).order_by('priority')
 
+    def getLeagueOrderRank(self):
+        waiverOrder = self.getLeagueOrderTeams()
+        return waiverOrder.index(self.team)+1
+
     def __str__(self):
         return '%s - %s' % (self.team, self.priority,)
 
