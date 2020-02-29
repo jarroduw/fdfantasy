@@ -860,11 +860,4 @@ class AddDriverToWaiverWire(View):
 ##  4)   If claimed by lower priority, notify that waiver holder that they have been pre-empted
 ##  6) If waiver priority is not 1, then add to waiver list and notify user in app
 
-##TODO: Need to add a "check waiver wire" view/api/function that:
-## loops through waiver claims that are expired
-##  1) Checks for expired waivers
-##  IF EXPIRED:
-##    2) assign driver to highest priority team
-##    3) change waiver priority (change team priority to max within league + 1)
-
 ##TODO: Need draft view (JS)

@@ -302,8 +302,6 @@ def roundTime(dt=None, dateDelta=60):
     return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
 ##TODO: Add current and last season stats for racer overview
-##TODO: Add ability to add driver from 'undrafted list's
 ##TODO: Add draft?
 ##TODO: Add communiction module TO ENABLE:
 ##  TODO: Propose/Accept trade
-##TODO: Implement waiver wire restrictions: need waiver order and one-day to one-week delay
