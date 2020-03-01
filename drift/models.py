@@ -53,6 +53,9 @@ class Racer(models.Model):
     def getAllPoints(self):
         data = ScoringEvent.objects.filter(racer=self.id)
 
+    def getLatestRanking(self):
+        return Ranking.objects.filter(racer=self).latest('-scraped').rank
+
     def __str__(self):
         return '%s' % (self.name,)
 

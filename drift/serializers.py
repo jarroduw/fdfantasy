@@ -32,7 +32,7 @@ class QualifySerializer(serializers.ModelSerializer):
         model = Qualify
         exclude = ['created_at', 'modified_at']
 
-class TeamActive(serializers.ModelSerializer):
+class TeamActiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamActive
         exclude = ['modified_at']

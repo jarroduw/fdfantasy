@@ -1,4 +1,8 @@
 Congratulations, you acquired {{racer.name}} and they can now be activated for your next event.
 
+{% if waiver and waiver.waiverwireremove_set.all|length > 0 %}
+    You dropped {{waiver.waiverwireremove_set.all}}.
+{% endif %}
+
 Best,
 The FD Fantasy team

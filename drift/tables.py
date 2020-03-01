@@ -7,6 +7,7 @@ from drift.urls import *
 class RacerTable(tables.Table):
     driver_url_slug = tables.Column(verbose_name='FD Bio')
     pro2 = tables.Column(verbose_name='Class')
+    latest_ranking = tables.Column(verbose_name='Ranking', accessor='getLatestRanking')
     #id = tables.Column(verbose_name='')
 
     def __init__(self, *args, team=None, **kwargs):
@@ -21,6 +22,11 @@ class RacerTable(tables.Table):
 
     def render_driver_url_slug(self, value, record):
         return format_html('<a href="https://formulad.com{}">Bio</a>', value)
+
+    def order_latest_ranking(self, queryset, is_descending):
+        queryset = sorted(queryset, key=lambda x: x.getLatestRanking(), reverse=is_descending)
+        return (queryset, True,)
+
 
     class Meta:
         model = Racer

@@ -134,8 +134,7 @@ class ActivateDriverApi(APIView):
     permission_classes = [IsAuthenticated|ReadOnly]
 
     def post(self, request):
-        serializer = TeamActive(data=request.data)
-        print(request.data)
+        serializer = TeamActiveSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -181,9 +180,8 @@ class CheckWaiverWire(APIView):
         waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
         while len(waivers) > 0:
             waiver = waivers[0]
-            print(waiver, waiver.getExpired(), waiver.team.waiverpriority.firstInOrder())
             with transaction.atomic():
-                addRacerToTeam(waiver.team, waiver.racer)
+                addRacerToTeam(waiver.team, waiver.racer, waiver=waiver)
                 for removeRacer in waiver.waiverwireremove_set.filter(active=True):
                     waiver.team.racers.remove(removeRacer.racer)
                     removeRacer.active = False
@@ -191,7 +189,7 @@ class CheckWaiverWire(APIView):
             waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
             waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
 
-def addRacerToWaiver(team, racer):
+def addRacerToWaiver(team, racer, waiver=None):
     skipWaiver = False
     try:
         existing = team.waiverwire_set.filter(active=True, racer=racer)
@@ -229,14 +227,15 @@ def addRacerToTeam(team, racer):
     teamsInLeague = [team.id for team in team.league.team_set.all()]
     team.racers.add(racer)
     team.save()
-    waiver = team.waiverwire_set.filter(racer=racer)
+    waiver = team.waiverwire_set.filter(racer=racer, active=True)
+    ##Should only be one
     for w in waiver:
         w.active=False
         w.save()
     team.waiverpriority.setOrderToMax()
     email_msg = get_template(
         'drift/email_driverAdded.html'
-        ).render({'racer': racer})
+        ).render({'racer': racer, 'waiver': w})
     send_mail(
         "Player Added to Team",
         email_msg,
