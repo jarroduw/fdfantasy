@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.contrib.auth import authenticate, login
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 
 # Create your views here.
 from django.conf import settings
@@ -853,9 +853,91 @@ class AddDriverToWaiverWire(View):
 
         return render(request, 'drift/waiveRacer.html', context)
 
+class TradeView(View):
 
-##TODO: Need to add a "AddDriverToWaiver" view that:
-##  4)   If claimed by lower priority, notify that waiver holder that they have been pre-empted
-##  6) If waiver priority is not 1, then add to waiver list and notify user in app
+    def post(self, request, team, racer):
+        '''Saves trade with both teams/drivers'''
+        ##TODO:
+        # check user is in league
+        # check that owner owns team
+        # check that user selected a player
+        # save to trades model, many to many on racers
+        # send notification to user
+
+    def get(self, request, team, racer=None):
+        '''shows all available teams for trade'''
+
+        ##TODO:
+        ## check user is in league
+        ## check that user owns team
+        ## if racer is None
+        ##   show all not accepted trades proposed to you
+        ##   show all not accepted trades proposed by you
+        ##   show all available players (i.e. not yet accepted) with option to trade
+        ## else:
+        #    check user is in league
+        #    check user owns team
+        #    show all racers on team as table with trade button
+
+class AcceptTradeView(View):
+
+    def post(self, request, trade, accept):
+        '''Functionality to accept a trade'''
+        ##TODO:
+        # check user owns receiving team
+        # within transaction
+        #   set trade active to false
+        #   if accept == True:
+        #       add receiving team racer to proposing team
+        #       add offering team racer to accepting team
+        #       notify offering team
+        #   if accept == False:
+        #       notify offering team
+
+class MessageOtherTeam(View):
+    permissions = [IsAuthenticated]
+
+    def post(self, request, team_id, sendTo=None):
+        '''Validates form and saves message and sends email'''
+        team = Team.objects.get(pk=team_id)
+        form = MessageTeamForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.sender = request.user
+            note.save()
+            email_msg = get_template('drift/email_sendMessage.html').render(
+                {
+                    'baseUrl': settings.ROOT_URL,
+                    'note': note,
+                    'user': request.user
+                }
+            )
+            send_mail(
+                "FD Fantasy Activation",
+                email_msg,
+                settings.DEFAULT_FROM_EMAIL,
+                [note.user.email]
+                )
+            return HttpResponseRedirect(reverse('drift:viewFantasyTeam', args=[team_id]))
+
+        return render(request, 'drift/sendMessage.html', context)
+
+    def get(self, request, team_id, sendTo=None):
+        '''Creates form to send a message'''
+        
+        team = Team.objects.get(pk=team_id)
+        if request.user != team.owner:
+            raise PermissionDenied
+
+        formContext = {}
+        if sendTo is not None:
+            sendToTeam = Team.objects.get(pk=sendTo)
+            formContext['user'] = sendToTeam.owner
+
+        teamOwners = [x.owner for x in team.league.team_set.all() if x.owner != request.user]
+        form = MessageTeamForm(initial=formContext)
+
+        context = {'form': form}
+        return render(request, 'drift/sendMessage.html', context)
 
 ##TODO: Need draft view (JS)

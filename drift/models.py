@@ -199,9 +199,9 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     read = models.BooleanField(default=False)
-    user = models.ForeignKey(User, models.CASCADE,  related_name='%(class)s_user')
-    sender = models.ForeignKey(User, models.SET_NULL, null=True,  related_name='%(class)s_sender')
-    msg = models.TextField()
+    user = models.ForeignKey(User, models.CASCADE,  related_name='%(class)s_user', verbose_name='Recipient')
+    sender = models.ForeignKey(User, models.SET_NULL, null=True,  related_name='%(class)s_sender', verbose_name='Sender')
+    msg = models.TextField(verbose_name='Message')
 
     def isModified(self):
         return roundTime(self.created_at) != roundTime(self.modified_at)
@@ -288,6 +288,19 @@ class WaiverPriority(models.Model):
 
     def __str__(self):
         return '%s - %s' % (self.team, self.priority,)
+
+class Trade(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    season = models.ForeignKey(Season, models.CASCADE)
+    #racersIn = models.ManyToManyField(Racer, models.CASCADE)
+    #racersOut = models.ManyToManyField(Racer, models.CASCADE, null=True)
+    proposer = models.ForeignKey(Team, models.CASCADE, related_name='%(class)s_team_proposer')
+    proposedTo = models.ForeignKey(Team, models.CASCADE, related_name='%(class)s_team_proposedTo')
+    deadline = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return '%s - %s (%s)' % (self.proposer, self.proposedTo, self.deadline,)
 
 def roundTime(dt=None, dateDelta=60):
     """Round a datetime object to a multiple of a timedelta

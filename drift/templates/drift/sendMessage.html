@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %} Send Message {% endblock title %}
+
+{% block title_page %}
+    <h3>Send Message</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <p>Send a message, any message, to other teams in your league.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Send">
+    </form>
+    
+{% endblock content %}

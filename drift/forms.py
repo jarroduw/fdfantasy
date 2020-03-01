@@ -53,3 +53,9 @@ class InviteUserForm(forms.ModelForm):
     class Meta:
         model = LeagueInvite
         fields = ['email']
+
+class MessageTeamForm(forms.ModelForm):
+
+    class Meta:
+        model = Notification
+        fields = ['user', 'msg']
