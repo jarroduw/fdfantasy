@@ -64,3 +64,60 @@ class RacerTableDrop(RacerTable):
         exclude = ['id', 'created_at', 'modified_at']
         attrs = {'class': 'table'}
         sequence = ('drop', '...', 'driver_url_slug')
+
+class RacerTableTrade(RacerTable):
+    id = tables.Column(verbose_name='')
+
+    def render_id(self, value, record):
+        link = reverse('drift:trade', args=[self.team.id, record.id])
+        return format_html('<a href="{}" class="btn btn-primary">Request Trade</a>', link)
+
+    class Meta:
+        model = Racer
+        exclude = ['created_at', 'modified_at']
+        attrs = {'class': 'table'}
+        sequence = ('id', '...', 'driver_url_slug')
+
+class TradeTable(tables.Table):
+    racerIn = tables.Column(verbose_name='Trade Details')
+
+    def render_proposer(self, value, record):
+        return format_html("{}", value.owner.username)
+
+    def render_proposedTo(self, value, record):
+        return format_html("{}", value.owner.username)
+
+    def render_racerIn(self, value, record):
+        racersIn = [x.name for x in value.all()]
+        racersOut = [x.name for x in record.racersOut.all()]
+        return format_html("{} for {}", ", ".join(racersIn), ", ".join(racersOut))
+
+    class Meta:
+        model = Trade
+        exclude = ['id', 'created_at', 'modified_at', 'season']
+        attrs = {'class': 'table'}
+
+class TradeTableByMe(TradeTable):
+    id = tables.Column(verbose_name='')
+
+    def render_id(self, value, record):
+        link = reverse('drift:decideTrade', args=[value, 'False'])
+        return format_html('<a href="{}" class="btn btn-primary">Cancel</a>', link)
+
+    class Meta:
+        model = Trade
+        exclude = ['created_at', 'proposer', 'modified_at', 'season', 'active', 'accepted']
+        attrs = {'class': 'table'}
+
+class TradeTableToMe(TradeTable):
+    id = tables.Column(verbose_name='')
+
+    def render_id(self, value, record):
+        link = reverse('drift:decideTrade', args=[value, 'True'])
+        link2 = reverse('drift:decideTrade', args=[value, 'False'])
+        return format_html('<a href="{}" class="btn btn-primary">Accept</a><a href="{}" class="btn btn-primary">Reject</a>', link, link2)
+
+    class Meta:
+        model = Trade
+        exclude = ['created_at', 'proposedTo', 'modified_at', 'season', 'active', 'accepted']
+        attrs = {'class': 'table'}

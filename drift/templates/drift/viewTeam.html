@@ -19,6 +19,7 @@
             {% endif %}
             {% if request.user == team.owner and not draftInFuture %}
                 <p><a href="{% url 'drift:acquireDriver' team.league.id %}">Add Racers from Free Agency</a></p>
+                <p><a href="{% url 'drift:trade' team.id %}">Trade Dashboard</a></p>
             {% endif %}
         </div>
     </div>

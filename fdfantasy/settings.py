@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'www.fdfantasy.com', 'fdfantasy.com']
 
+ADMINS = [('Jarrod', 'jarroduw@gmail.com',)]
+
 
 # Application definition
 

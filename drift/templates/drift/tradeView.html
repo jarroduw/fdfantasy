@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Trades Dashboard {% endblock title %}
+
+{% block title_page %}
+    <h3>Trades Dashboard</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Trades Proposed to Me</h3></div>
+                <div class="panel-body">
+                    {% if not tradesToMe.rows %}
+                        <p>There are no trades proposed to you.</p>
+                    {% else %}
+                        {% render_table tradesToMe %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Trades I've Proposed</h3></div>
+                <div class="panel-body">
+                    {% if not tradesToOthers.rows %}
+                        <p>There are no trades you have proposed.</p>
+                    {% else %}
+                        {% render_table tradesToOthers %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading"><h3 class="panel-title">Players Available for Trade</h3></div>
+                <div class="panel-body">
+                    {% render_table racers %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% endblock content %}

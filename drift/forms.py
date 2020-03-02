@@ -59,3 +59,10 @@ class MessageTeamForm(forms.ModelForm):
     class Meta:
         model = Notification
         fields = ['user', 'msg']
+
+class TradeForm(forms.ModelForm):
+    deadline = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget, required=True, help_text='Required, use YYYY-MM-DD and HH:MM')
+
+    class Meta:
+        model = Trade
+        fields = ['deadline']

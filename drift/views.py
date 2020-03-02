@@ -855,44 +855,168 @@ class AddDriverToWaiverWire(View):
 
 class TradeView(View):
 
-    def post(self, request, team, racer):
+    def post(self, request, team_id, racer_id):
         '''Saves trade with both teams/drivers'''
+
+        active_season = Season.objects.filter(active=True).latest('end')
+
+        team = Team.objects.get(pk=team_id)
+        if request.user != team.owner:
+            raise PermissionDenied
+
+        racer = Racer.objects.get(pk=racer_id)
+
+        teamsInLeague = team.league.team_set.all().exclude(id=team.id)
+        racersInLeague = []
+        for team1 in teamsInLeague:
+            if racer in team1.racers.all():
+                break
+
+        pks = request.POST.getlist("drop")
+        tradeForm = TradeForm(request.POST)
+        if tradeForm.is_valid():
+            with transaction.atomic():
+                trade = tradeForm.save(commit=False)
+                trade.season = active_season
+                trade.proposer = team
+                trade.proposedTo = team1
+                trade.save()
+                trade.racerIn.add(racer)
+                if len(pks) > 0:
+                
+                    for pk in pks:
+                        racer = Racer.objects.get(pk=pk)
+                        trade.racersOut.add(racer)
+
+                note = Notification.objects.create(
+                    user=trade.proposedTo.owner,
+                    sender=trade.proposer.owner,
+                    msg="I proposed a trade: %s" % (trade.tradeDescription(),)
+                )
+                note.save()
+                email_msg = get_template('drift/email_tradeProposed.html').render(
+                    {
+                        'baseUrl': settings.ROOT_URL,
+                        'note': note,
+                        'user': request.user,
+                        'trade': trade
+                    }
+                )
+                send_mail(
+                    'FD Fantasy Trade Proposal',
+                    email_msg,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [note.user.email]
+                )
+                return HttpResponseRedirect(reverse('drift:trade', args=[team.id]))
+
+        tradeFor = Racer.objects.get(pk=racer_id)
+        trade = RacerTableDrop(team.racers.all())
+        RequestConfig(request, paginate=False).configure(trade)
+        context = {'team': team, 'tradeFor': tradeFor, 'racers': trade}
         ##TODO:
-        # check user is in league
-        # check that owner owns team
-        # check that user selected a player
         # save to trades model, many to many on racers
         # send notification to user
 
-    def get(self, request, team, racer=None):
+        return render(request, 'drift/tradeView2.html', context)
+
+    def get(self, request, team_id, racer_id=None):
         '''shows all available teams for trade'''
 
-        ##TODO:
-        ## check user is in league
-        ## check that user owns team
-        ## if racer is None
-        ##   show all not accepted trades proposed to you
-        ##   show all not accepted trades proposed by you
-        ##   show all available players (i.e. not yet accepted) with option to trade
-        ## else:
-        #    check user is in league
-        #    check user owns team
-        #    show all racers on team as table with trade button
+        team = Team.objects.get(pk=team_id)
+        if request.user != team.owner:
+            raise PermissionDenied
+
+        if racer_id is None:
+            tradesProposedToMe = Trade.objects.filter(proposedTo=team, active=True, accepted=False)
+            tradesToMe = TradeTableToMe(tradesProposedToMe)
+            tradesProposedToOthers = Trade.objects.filter(proposer=team, active=True, accepted=False)
+            tradesToOthers = TradeTableByMe(tradesProposedToOthers)
+            teamsInLeague = team.league.team_set.all().exclude(id=team.id)
+            racersInLeague = []
+            for team1 in teamsInLeague:
+                racersInLeague.extend(team1.racers.all())
+
+            racers = RacerTableTrade(racersInLeague, team=team)
+            RequestConfig(request, paginate=False).configure(racers)
+            context = {
+                'tradesToMe': tradesToMe,
+                'tradesToOthers': tradesToOthers,
+                'racers': racers
+            }
+            return render(request, 'drift/tradeView.html', context)
+        else:
+            tradeFor = Racer.objects.get(pk=racer_id)
+            trade = RacerTableDrop(team.racers.all())
+            RequestConfig(request, paginate=False).configure(trade)
+            tradeForm = TradeForm()
+            context = {
+                'team': team,
+                'tradeFor': tradeFor,
+                'racers': trade,
+                'tradeForm': tradeForm
+                }
+
+        return render(request, 'drift/tradeView2.html', context)
 
 class AcceptTradeView(View):
 
-    def post(self, request, trade, accept):
+    def get(self, request, trade_id, accept):
         '''Functionality to accept a trade'''
-        ##TODO:
-        # check user owns receiving team
-        # within transaction
-        #   set trade active to false
-        #   if accept == True:
-        #       add receiving team racer to proposing team
-        #       add offering team racer to accepting team
-        #       notify offering team
-        #   if accept == False:
-        #       notify offering team
+
+        accept = accept == 'True'
+
+        trade = Trade.objects.get(pk=trade_id)
+        if request.user != trade.proposer.owner and request.user != trade.proposedTo.owner:
+            raise PermissionDenied
+
+        dest = trade.proposer
+        action = 'Cancel'
+        if request.user == trade.proposedTo.owner:
+            action = 'Accept/Reject'
+            dest = trade.proposedTo
+
+        with transaction.atomic():
+            if not accept:
+                trade.active = False
+                trade.save()
+                if action == 'Cancel':
+                    msg = 'User %s cancelled your trade (%s).' % (dest.owner.username, trade.tradeDescription(),)
+                else:
+                    msg = 'User %s rejected your proposed trade (%s).' % (dest.owner.username, trade.tradeDescription(),)
+            else:
+                trade.accepted = True
+                trade.active = False
+                trade.save()
+                for racer in trade.racersOut.all():
+                    trade.proposer.racers.remove(racer)
+                    trade.proposedTo.racers.add(racer)
+                for racer in trade.racerIn.all():
+                    trade.proposer.racers.add(racer)
+                    trade.proposedTo.racers.remove(racer)
+                msg = 'User %s accepted your trade and the players have been transferred (%s).' % (dest.owner.username, trade.tradeDescription(),)
+            adminUser = User.objects.filter(username='admin')[0]
+            note = Notification.objects.create(
+                user=trade.proposer.owner,
+                sender=adminUser,
+                msg=msg
+            )
+            note.save()
+            email_msg = get_template('drift/email_tradeDecision.html').render(
+                {
+                    'baseUrl': settings.ROOT_URL,
+                    'note': note,
+                    'user': request.user,
+                }
+            )
+            send_mail(
+                'FD Fantasy Trade Decision',
+                email_msg,
+                settings.DEFAULT_FROM_EMAIL,
+                [note.user.email]
+            )
+            
+        return HttpResponseRedirect(reverse('drift:trade', args=[dest.id]))
 
 class MessageOtherTeam(View):
     permissions = [IsAuthenticated]

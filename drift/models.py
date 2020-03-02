@@ -56,6 +56,10 @@ class Racer(models.Model):
     def getLatestRanking(self):
         return Ranking.objects.filter(racer=self).latest('-scraped').rank
 
+    def getTeamFromLeague(self, league):
+        teams = self.team_all().filter(league=league)
+        return teams[0]
+
     def __str__(self):
         return '%s' % (self.name,)
 
@@ -293,11 +297,20 @@ class Trade(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     season = models.ForeignKey(Season, models.CASCADE)
-    #racersIn = models.ManyToManyField(Racer, models.CASCADE)
-    #racersOut = models.ManyToManyField(Racer, models.CASCADE, null=True)
+    racerIn = models.ManyToManyField(Racer, related_name='%(class)s_racersIn')
+    racersOut = models.ManyToManyField(Racer, related_name='%(class)s_racersOut')
     proposer = models.ForeignKey(Team, models.CASCADE, related_name='%(class)s_team_proposer')
-    proposedTo = models.ForeignKey(Team, models.CASCADE, related_name='%(class)s_team_proposedTo')
+    proposedTo = models.ForeignKey(Team, models.CASCADE, related_name='%(class)s_team_proposedTo', null=True)
     deadline = models.DateTimeField(null=True)
+    active = models.BooleanField(default=True)
+    accepted = models.BooleanField(default=False)
+
+    def tradeDescription(self):
+        tradeDesc = '%s for %s' % (
+            ', '.join([x.name for x in self.racerIn.all()]),
+            ', '.join([x.name for x in self.racersOut.all()]),
+            )
+        return tradeDesc
 
     def __str__(self):
         return '%s - %s (%s)' % (self.proposer, self.proposedTo, self.deadline,)

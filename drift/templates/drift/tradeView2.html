@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Trade Dashboard - Release Players{% endblock title %}
+
+{% block title_page %}
+    <h3>Trade Dashboard - Release Players </h3>
+{% endblock title_page %}
+
+{% block content %}
+    <p>If your trade is accepted the players selected here will be transferred to the team you are proposing a trade with.</p>
+
+    {% if errorMsg %}
+        <div class="alert alert-danger" role="alert">{{errorMsg}}</div>
+     {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        {% render_table racers %}
+        {{tradeForm.as_p}}
+        <input type="submit" value="Trade Racers">
+    </form>
+    
+{% endblock content %}
