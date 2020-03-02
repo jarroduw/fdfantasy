@@ -235,7 +235,7 @@ def addRacerToTeam(team, racer):
     team.waiverpriority.setOrderToMax()
     email_msg = get_template(
         'drift/email_driverAdded.html'
-        ).render({'racer': racer, 'waiver': w})
+        ).render({'racer': racer})
     send_mail(
         "Player Added to Team",
         email_msg,
