@@ -832,7 +832,7 @@ class AddDriverToWaiverWire(View):
         waiverPriorityWin = waiverPriority.firstInOrder()
         with transaction.atomic():
             if notFull and waiverPriorityWin:
-                addRacerToTeam(team, driver, waiverPriority)
+                addRacerToTeam(team, driver)
                 return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
 
             ##Team not full, but not first in waiver priority: 
@@ -1064,4 +1064,4 @@ class MessageOtherTeam(View):
         context = {'form': form}
         return render(request, 'drift/sendMessage.html', context)
 
-##TODO: Need draft view (JS)
+##TODO: Need draft view (JS) (make sure that it sets waiver priority)

@@ -336,5 +336,3 @@ def roundTime(dt=None, dateDelta=60):
 
 ##TODO: Add current and last season stats for racer overview
 ##TODO: Add draft?
-##TODO: Add communiction module TO ENABLE:
-##  TODO: Propose/Accept trade
