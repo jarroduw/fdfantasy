@@ -47,3 +47,12 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         
+class DraftQueueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DraftQueue
+        fields = '__all__'
+
+class DraftPickSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DraftPick
+        fields = '__all__'

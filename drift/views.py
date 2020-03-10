@@ -2,6 +2,8 @@ import random
 import hashlib
 from collections import OrderedDict
 
+from huey.contrib.djhuey import HUEY
+
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, UserCreationForm
 from django.core.mail import send_mail
 
@@ -1064,4 +1066,98 @@ class MessageOtherTeam(View):
         context = {'form': form}
         return render(request, 'drift/sendMessage.html', context)
 
-##TODO: Need draft view (JS) (make sure that it sets waiver priority)
+class DraftView(View):
+
+
+    def get(self, request, team_id, racer_id=None):
+
+        team = Team.objects.get(pk=team_id)
+        if request.user != team.owner:
+            raise PermissionDenied
+        try:
+            test = team.draftqueue
+        except DraftQueue.DoesNotExist:
+            dq = DraftQueue.objects.create(team=team)
+            dq.save()
+
+        dd = team.league.draftdate
+
+        now = timezone.now()
+        
+        one_hour = dd.draft - datetime.timedelta(hours=1)
+        if now >= one_hour:
+            notifications = Notification.objects.filter(created_at__gte=one_hour).order_by('-created_at')
+            onTheClock = False
+            lastPick = None
+            timeUntilDue = dd.draft.timestamp()
+            roundNumber = None
+            availRacers = None
+            myTeam = None
+            activePicker = None
+            pickNumber = None
+            active = False
+            ##NOTE: Opens 1 hour before draft
+            if not dd.one_hour_warning:
+                setDraftDateWarning(dd)
+            do = DraftOrder.objects.filter(league=team.league).order_by('seed')
+            myDo = do.get(team=team)
+            if now >= team.league.draftdate.draft or dd.started:
+                ##Try to pick up autodraft
+                with transaction.atomic():
+                    thisAd = DraftPickReservation.getQueued(dd)
+                    if len(thisAd) > 1 or len(thisAd) == 0:
+                        raise AttributeError("A pick got skipped")
+                    thisAd = thisAd[0]
+                    timeUntilDue = thisAd.due_at.timestamp()
+                    activePicker = thisAd.team
+                try:
+                    allPicks = DraftPick.objects.filter(team__in=[x.team for x in do])
+                    lastPick = allPicks.latest('selected_at')
+                    if lastPick.pick_number >= len(do):
+                        pickNumber = 1
+                        roundNumber = lastPick.round + 1
+                    else:
+                        pickNumber = lastPick.pick_number + 1
+                        roundNumber = lastPick.round
+                    racers = Racer.objects.all().exclude(id__in=[x.racer.id for x in allPicks])
+                except DraftPick.DoesNotExist:
+                    pickNumber = 1
+                    racers = Racer.objects.all()
+                if availRacers is None:
+                    racers = Racer.objects.all()
+                availRacers = RacerTableDraft(racers)
+                RequestConfig(request, paginate=False).configure(availRacers)
+                myTeam = RacerTable(team.racers.all())
+
+                if request.user == activePicker.owner:
+                    onTheClock = True
+
+            ##TODO:
+            # need javascript to check if pick has been made
+            # need javascript to execute pick for end of countdown or when clicked, to pick from queue, if not in queue, then from best available
+            # need javascript to add driver to queue
+            # need javascript to change position of driver in queue
+
+            context = {
+                'team': team,
+                'active': str(active).lower(),
+                'draftOrder': do,
+                'myDraftOrder': myDo,
+                'onTheClock': onTheClock,
+                'notifications': notifications,
+                'timeUntilDue': timeUntilDue,
+                'availRacers': availRacers,
+                'myRacers': myTeam,
+                'lastPick': lastPick,
+                'activePicker': activePicker,
+                'roundNumber': roundNumber,
+                'pickNumber': pickNumber
+                }
+            print(context['timeUntilDue'])
+            return render(request, 'drift/draftBoard.html', context)
+        context = {'team': team}
+        return render(request, 'drift/draftBoardToEarly.html', context)
+
+##TODO: Activate driver does not do anything... (need to deploy js as static)
+##TODO: Need draft view (JS) (make sure that it sets waiver priority on conclusion)
+##TODO: Need JS to handle timing and refreshes

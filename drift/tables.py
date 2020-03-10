@@ -78,6 +78,18 @@ class RacerTableTrade(RacerTable):
         attrs = {'class': 'table'}
         sequence = ('id', '...', 'driver_url_slug')
 
+class RacerTableDraft(RacerTable):
+    id = tables.Column(verbose_name='')
+
+    def render_id(self, value, record):
+        return format_html('<span class="glyphicon glyphicon-plus" id="addToQueue" value="{}"></span>', value)
+
+    class Meta:
+        model = Racer
+        exclude = ['created_at', 'modified_at']
+        attrs = {'class': 'table'}
+        sequence = ('id', '...', 'driver_url_slug')
+
 class TradeTable(tables.Table):
     racerIn = tables.Column(verbose_name='Trade Details')
 

@@ -1,8 +1,18 @@
+import random
+
+import time
+
+from huey.contrib.djhuey import HUEY
+
 from django.db import transaction
 from django.conf import settings
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.template.loader import get_template
+from django.utils.timesince import timesince
+
+from huey import crontab
+from huey.contrib.djhuey import db_task, db_periodic_task, revoke_by_id, is_revoked
 
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
@@ -172,22 +182,310 @@ class CheckWaiverWire(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        self.checkWaiverWire()
+        checkWaiverWire_task.call_local()
         return Response({'msg': 'success'})
 
-    def checkWaiverWire(self):
+@db_periodic_task(crontab(minute='*/2'))
+def checkWaiverWire_task():
+    waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
+    waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
+    while len(waivers) > 0:
+        waiver = waivers[0]
+        with transaction.atomic():
+            addRacerToTeam(waiver.team, waiver.racer)
+            for removeRacer in waiver.waiverwireremove_set.filter(active=True):
+                waiver.team.racers.remove(removeRacer.racer)
+                removeRacer.active = False
+                removeRacer.save()
         waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
         waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
-        while len(waivers) > 0:
-            waiver = waivers[0]
-            with transaction.atomic():
-                addRacerToTeam(waiver.team, waiver.racer, waiver=waiver)
-                for removeRacer in waiver.waiverwireremove_set.filter(active=True):
-                    waiver.team.racers.remove(removeRacer.racer)
-                    removeRacer.active = False
-                    removeRacer.save()
-            waivers = WaiverWire.objects.filter(active=True).order_by('team__waiverpriority', 'team__id')
-            waivers = [x for x in waivers if x.getExpired()==True or x.team.waiverpriority.firstInOrder()==True]
+
+class CheckDraftStart(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        checkDraftStartTask.call_local()        
+        return Response({'msg': 'success'})
+
+@db_periodic_task(crontab(minute='*/1'))
+def checkDraftStartTask():
+    now = timezone.now()
+    now_plus_hour = now + datetime.timedelta(hours=1)
+    drafts = DraftDate.objects.filter(draft__lte=now_plus_hour, started=False)
+    for draft in drafts:
+        if draft.draft >= now:
+            setDraftDateActive(draft)
+        elif not draft.one_hour_warning:
+            setDraftDateWarning(draft)
+
+class DraftPickAPI(APIView):
+    permission_classes = [IsTeamOwner]
+
+    def get(self, request, team_id, latest=False):
+        team = Teamobjects.get(pk=team_id)
+        dp = DraftPick.objects.get(league=team.league)
+        if latest:
+            dp = dp.latest('selected_at')
+        serializer = DraftPickSerializer(dp)
+        return Response(serializer.data)
+
+    def post(self, request, team_id):
+        success = None
+        team = Team.objects.get(pk=team_id)
+        if request.user != team.owner:
+            raise PermissionDenied
+        with transaction.atomic():
+            thisAd = DraftPickReservation.getQueued(team.league.draftdate)
+            if len(thisAd) == 0:
+                raise AttributeError("There are no autodrafts queued")
+            if len(thisAd) > 1:
+                raise AttributeError("There are too many autodrafts queued")
+            thisAd = thisAd[0]
+            if thisAd.team != team:
+                raise PermissionDenied
+            thisAd.due_at = timezone.now()
+            thisAd.save()
+            success = True
+        if success is None:
+            return Response({'msg': 'No picks queued'})
+        elif success:
+            return Response({'msg': 'Saved!'})
+        return Response({'msg': 'Its not your turn'})
+
+def getAutodraftInstance(draft, tries=20):
+    running = False
+    n = 0
+    while not running:
+        ad = HUEY.scheduled()
+        if len(ad) > 0:
+            for a in ad:
+                print(a)
+            thisAd = [x for x in ad if x.args[1] == draft.id]
+            if len(thisAd) > 0:
+                thisAd = thisAd[0]
+                running = True
+                break
+        if n >= tries:
+            thisAd = None
+            break
+        n+=1
+    return thisAd
+
+def makeDraftPick(team_id, draft_id):
+    print("In makeDraftPick")
+    team = Team.objects.get(pk=team_id)
+    do = DraftOrder.objects.filter(league=team.league).order_by('seed')
+    myDo = do.get(team=team)
+    meIdx = list(do).index(myDo)
+    print("Checking picks list")
+    try:
+        lastPick = DraftPick.objects.filter(draft=team.league.draftdate).latest('selected_at')
+        print("Inside picks > 0")
+        lastPickDo = do.get(team=lastPick.team)
+        lastPickIdx = list(do).index(lastPickDo)
+        if lastPick.pick_number < len(team.league.team_set.all()):
+            pick_number = lastPick.pick_number + 1
+            rd = lastPick.round
+        else:
+            pick_number = 1
+            rd = lastPick.round + 1
+    except DraftPick.DoesNotExist:
+        print("No prior picks")
+        lastPick = None
+        lastPickIdx = -1
+        pick_number = 1
+        rd = 1
+    
+    if meIdx - 1 == lastPickIdx or (lastPickIdx == len(do)-1 and meIdx == 0):
+        print("passed idx test")
+        now = timezone.now()
+        dq = team.draftqueue
+        with transaction.atomic():
+            print("In transaction")
+            if len(dq.priority) != 0:
+                racer_id = dq.priority.pop(0)
+                racer = Racer.objects.get(pk=racer_id)
+            else:
+                do = DraftOrder.objects.filter(league=team.league)
+                try:
+                    allPicks = DraftPick.objects.filter(team__in=[x.team for x in do])
+                    racers = Racer.objects.all().exclude(id__in=[x.racer.id for x in allPicks])
+                except DraftPick.DoesNotExist:
+                    racers = Racer.objects.all()
+                
+                racer = sorted(racers, key=lambda x: x.getLatestRanking(), reverse=False)[0]
+
+            dp = DraftPick.objects.create(
+                draft=team.league.draftdate,
+                team=team,
+                selected_at=now,
+                racer=racer,
+                round=rd,
+                pick_number=pick_number
+            )
+            dp.save()
+            team.racers.add(racer)
+            dq.save()
+            for team in team.league.team_set.all():
+                note = Notification.objects.create(
+                    user=team.owner,
+                    msg='%s selected %s with pick %s of round %s.' % (
+                        dp.team.owner.username,
+                        dp.racer.name,
+                        dp.pick_number,
+                        dp.round,
+                        )
+                )
+                note.save()
+        return True
+    return False
+
+
+class QueueAPI(APIView):
+    permission_classes = [IsTeamOwner|ReadOnly]
+
+    def get(self, request, team_id):
+        dq = DraftQueue.objects.get(pk=team_id)
+        queue = self._getRacerNamesFromQueue(dq)
+        return Response(queue)
+
+    def post(self, request, team_id, racer_id, position='add'):
+        dq = DraftQueue.objects.get(team=team_id)
+        alreadyThere = racer_id in dq.priority
+        if position == 'bottom':
+            if alreadyThere:
+                temp = dq.priority.pop(dq.priority.index(racer_id))
+            dq.priority.append(racer_id)
+        elif position == 'top':
+            temp = dq.priority.pop(dq.priority.index(racer_id))
+            dq.priority = [racer_id] + dq.priority
+        elif position == 'up':
+            current = dq.priority.index(racer_id)
+            new = current - 1
+            temp = dq.priority.pop(current)
+            dq.priority.insert(new, racer_id)
+        elif position == 'down':
+            current = dq.priority.index(racer_id)
+            new = current + 1
+            temp = dq.priority.pop(current)
+            dq.priority.insert(new, racer_id)
+        elif position == 'remove':
+            temp = dq.priority.pop(dq.priority.index(racer_id))
+        elif position == 'add':
+            if racer_id not in dq.priority:
+                dq.priority.append(racer_id)
+        else:
+            raise AttributeError('Action %s is not a valid update' % (position,))
+        dq.save()
+        queue = self._getRacerNamesFromQueue(dq)
+        return Response(queue)
+
+    def _getRacerNamesFromQueue(self, dq):
+        queue = []
+        for d_id in dq.priority:
+            racer = Racer.objects.get(pk=d_id)
+            queue.append((racer.id, racer.name,))
+        return queue
+
+def setDraftDateActive(draft):
+
+    if not draft.started:
+        with transaction.atomic():
+            for team in draft.league.team_set.all():
+                note = Notification.objects.create(
+                    user=team.owner,
+                    msg='Draft for %s league starting now!' % (team.league,)
+                )
+                email_msg = get_template(
+                    'drift/email_draftStarting.html'
+                    ).render({
+                        'team': team,
+                        'baseUrl': settings.ROOT_URL,
+                        })
+                send_mail(
+                    "Draft for %s league starting!",
+                    email_msg,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [team.owner.email]
+                )
+            draft.started = True
+            draft.save()
+        import threading
+        t = threading.Thread(target=startAutodraft, args=(draft,))
+        t.setDaemon(True)
+        t.start()
+        #startAutodraft(draft)
+
+##TODO: Need to add function that loops until there are no picks left and calls task with league.draft_interval_minutes
+def startAutodraft(draft):
+    print("Starting autodraft")
+    do = DraftOrder.objects.all().order_by('seed')
+    timeUntil = draft.league.draft_interval_minutes*60
+    while not draft.finished:
+        print("Looping through for another round")
+        for d in do:
+            print("In d loop")
+            print(d.team.name)
+            ##Start task for team
+            s = DraftPickReservation.schedule(draft, d.team, delay=timeUntil)
+            #r = makeDraftPick.schedule((d.team.id, draft.id,), delay=draft.league.draft_interval_minutes*60)
+            print("scheduled")
+            while True:
+                with transaction.atomic():
+                    t = DraftPickReservation.getQueued(draft, expired=True)
+                    if len(t) > 0:
+                        for s in t:
+                            ##Execute
+                            success = makeDraftPick(d.team.id, draft.id)
+                            s.active=False
+                            s.save()
+                        break
+                time.sleep(1)
+            ##Check if last pick should be final pick
+            print("Past the r")
+        print("done with d")
+        lastPick = draft.draftpick_set.latest('selected_at')
+        print("Got lastPick")
+        print(lastPick.round, draft.league.max_racers)
+        timeUntil = draft.league.draft_interval_minutes*60 - (timezone.now() - lastPick.selected_at).seconds
+        print(timeUntil)
+        if lastPick.round == draft.league.max_racers:
+            print("Time to exit")
+            draft.finshed = True
+            draft.save()
+            break
+
+def setDraftDateWarning(draft):
+    if not draft.one_hour_warning:
+        with transaction.atomic():
+            teams = draft.league.team_set.all()
+            random.shuffle(list(teams))
+            for t, team in enumerate(teams):
+                do, created = DraftOrder.objects.update_or_create(
+                    team=team,
+                    league=team.league,
+                    seed=t,
+                    defaults = {'team': team}
+                )
+                do.save()
+                note = Notification.objects.create(
+                    user=team.owner,
+                    msg='Draft for %s league starts in %s!' % (team.league, timesince(team.league.draftdate.draft),)
+                )
+                email_msg = get_template(
+                    'drift/email_draftStartingSoon.html'
+                    ).render({
+                        'team': team,
+                        'baseUrl': settings.ROOT_URL,
+                        })
+                send_mail(
+                    "Draft for %s league starts soon!",
+                    email_msg,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [team.owner.email]
+                )
+            draft.one_hour_warning = True
+            draft.save()
 
 def addRacerToWaiver(team, racer, waiver=None):
     skipWaiver = False

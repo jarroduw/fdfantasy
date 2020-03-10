@@ -2,6 +2,7 @@ import datetime
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 
 # Create your models here.
@@ -184,26 +185,84 @@ class DraftOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     league = models.ForeignKey(League, models.SET_NULL, blank=True, null=True)
-    owner = models.OneToOneField(User, models.CASCADE)
+    team = models.OneToOneField(Team, models.CASCADE)
     seed = models.IntegerField()
 
     def __str__(self):
-        return '%s - %s (%s)' % (self.league, self.owner, self.seed,)
+        return '%s - %s (%s)' % (self.league, self.team, self.seed,)
 
 class DraftDate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     league = models.OneToOneField(League, models.CASCADE)
     draft = models.DateTimeField(verbose_name="Date of Draft")
+    one_hour_warning = models.BooleanField(default=False)
+    started = models.BooleanField(default=False)
+    finished = models.BooleanField(default=False)
 
     def __str__(self):
         return '%s - %s' % (self.league, self.draft,)
+
+class DraftPick(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    draft = models.ForeignKey(DraftDate, models.CASCADE)
+    team = models.ForeignKey(Team, models.SET_NULL, null=True)
+    selected_at = models.DateTimeField()
+    racer = models.ForeignKey(Racer, models.SET_NULL, null=True)
+    round = models.IntegerField()
+    pick_number = models.IntegerField()
+
+    def __str__(self):
+        return '%s, %s, %s (%s)' % (self.team, self.round, self.pick_number, self.racer,)
+
+class DraftPickReservation(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    draft = models.ForeignKey(DraftDate, models.CASCADE, related_name='%(class)s_draft',)
+    team = models.ForeignKey(Team, models.CASCADE)
+    due_at = models.DateTimeField()
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return '%s - %s (%s)' % (self.draft.id, self.team.id, self.active,)
+
+    @classmethod
+    def schedule(cls, draft, team, delay=0):
+        eta = timezone.now() + datetime.timedelta(seconds=delay)
+        s = cls.objects.create(
+            draft=draft,
+            team=team,
+            due_at=eta
+        )
+        s.save()
+        return s
+
+    @classmethod
+    def getQueued(cls, draft, expired=False):
+        temp = cls.objects.select_for_update().filter(draft=draft, active=True)
+        print(temp)
+        if expired:
+            temp = temp.filter(due_at__lte=timezone.now())
+        return temp
+
+class DraftQueue(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    team = models.OneToOneField(Team, models.CASCADE)
+    ##NOTE: priority list contains pk for drivers
+    priority = ArrayField(
+        models.IntegerField(blank=True),
+        default=list
+    )
+
+    def __str__(self):
+        return '%s' % (self.team.name,)
 
 class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     read = models.BooleanField(default=False)
-    user = models.ForeignKey(User, models.CASCADE,  related_name='%(class)s_user', verbose_name='Recipient')
+    user = models.ForeignKey(User, models.CASCADE, related_name='%(class)s_user', verbose_name='Recipient')
     sender = models.ForeignKey(User, models.SET_NULL, null=True,  related_name='%(class)s_sender', verbose_name='Sender')
     msg = models.TextField(verbose_name='Message')
 

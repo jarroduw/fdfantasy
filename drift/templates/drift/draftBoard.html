@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+
+{% block title %} Draft - {{team.league.name}} {% endblock title %}
+
+{% block title_page %}
+    
+{% endblock title_page %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="panel panel-default">
+                <div class="panel-heading"><p>Overview Information</p></div>
+                <div class="panel-body">
+                    <ul>
+                        <li>League: {{team.league}}</li>
+                        <li>Max Picks: {{team.league.max_racers}}</li>
+                        <li>Draft Interval: {{team.league.draft_interval}}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+            <div class="panel panel-default">
+                <div class="panel-heading"><p>On the Clock</p></div>
+                <div class="panel-body">
+                    <ul>
+                        <li>Picking: {{activePicker.name}}</li>
+                        <li id="remaining"></li>
+                        <li>Round: {{roundNumber}}, Pick: {{pickNumber}}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+            <div class="panel panel-default">
+                <div class="panel-heading"><p>Draft Overview Information</p></div>
+                <div class="panel-body">
+                    <ul>
+                        <li>Draft Date: {{team.league.draftdate.draft}}</li>
+                        <li># Teams: {{team.league.team_set.all|length}}</li>
+                        <li>On the clock for: {{team.league.draft_interval_minutes}} minutes.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-sm-9">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">My Team</h3>
+                        </div> 
+                        <div class="panel-body">
+                            {% if myRacers.rows %}
+                                {% render_table myRacers %}
+                            {% else %}
+                                <p>This is where the my team view will sit.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Best Available</h3>
+                        </div>
+                        <div class="panel-body" id="availRacers">
+                            {% if availRacers.rows %}
+                                {% render_table availRacers %}
+                            {% else %}
+                                <p>This is where the best available table will go</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-3">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Queue</h3>
+                        </div>
+                        <div class="panel-body">
+                            <button type"button" class="btn btn-primary btn-block {% if not onTheClock %}disabled{% endif %}" id="pickFromTop">
+                                Select From Top
+                            </button>
+                            
+                            <div id=queue></div>
+                    
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Draft Order</h3>
+                        </div>
+                        <div class="panel-body">
+                            <ol>
+                                {% for o in draftOrder %}
+                                <li>{{o.team.name}}</li>
+                                {% endfor %}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">Feed</h3>
+                        </div>
+                        <div class="panel-body">    
+                            
+                            {% if notifications|length > 0 %}
+                                {% for note in notifications %}
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="panel panel-default">
+                                                <div class="panel-body">{{note.sender}} ({{note.created_at|timesince}} ago): {{note.msg|safe}}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                    <p>You have no notifications!</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block javascript_footer %}
+
+// Set the date we're counting down to
+var countDownDate = new Date({{timeUntilDue}}).getTime();
+//console.log(countDownDate);
+
+// Update the count down every 1 second
+var x = setInterval(function() {
+
+  // Get today's date and time
+  var now = Math.floor((new Date()).getTime() / 1000);
+  //console.log("Now " + now);
+
+  // Find the distance between now and the count down date
+  var distance = countDownDate - now;
+  //console.log("Distance: " + distance);
+
+  // Time calculations for days, hours, minutes and seconds
+  var days = Math.floor(distance / (60 * 60 * 24));
+  var hours = Math.floor((distance % (60 * 60 * 24)) / (60 * 60));
+  var minutes = Math.floor((distance % (60 * 60)) / (60));
+  var seconds = Math.floor((distance % (60)));
+  //console.log(seconds);
+
+  // Display the result in the element with id="remaining"
+  document.getElementById("remaining").innerHTML = "Time Remaining:" + days + "d " + hours + "h "
+  + minutes + "m " + seconds + "s ";
+
+  // If the count down is finished, write some text
+  if (distance < 0) {
+    clearInterval(x);
+    document.getElementById("remaining").innerHTML = "Time Remaining: EXPIRED";
+    if ({{active}} == "true"){
+        window.location.reload(true);
+    }
+  }
+}, 1000);
+
+function getQueue(team_id, update=false){
+    let action = ['queue', 'read'];
+    let params = {'team_id': team_id};
+    client.action(schema, action, params).then(function(result){
+        var list = document.createElement('ol');
+        list.id = 'ol-queue';
+
+        for (var i = 0; i < result.length; i++){
+            var item = document.createElement('li');
+            
+            var remove = document.createElement('span');
+            remove.id = 'removeFromQueue';
+            remove.className = 'glyphicon glyphicon-remove';
+            remove.setAttribute('value', result[i][0]);
+
+            var promote = document.createElement('span');
+            promote.id = 'promoteInQueue';
+            promote.className = 'glyphicon glyphicon-chevron-up';
+            promote.setAttribute('value', result[i][0]);
+
+            var demote = document.createElement('span');
+            demote.id = 'demoteInQueue';
+            demote.className = 'glyphicon glyphicon-chevron-down';
+            demote.setAttribute('value', result[i][0]);
+
+            var toTop = document.createElement('span');
+            toTop.id = 'toTopInQueue';
+            toTop.className = 'glyphicon glyphicon-hand-up';
+            toTop.setAttribute('value', result[i][0]);
+
+            item.appendChild(document.createTextNode(result[i][1]));
+            item.appendChild(remove);
+            item.appendChild(promote);
+            item.appendChild(demote);
+            item.appendChild(toTop);
+            list.appendChild(item);
+        }
+        var item = document.createElement('li');
+        item.appendChild(document.createTextNode('Best Available'));
+        list.appendChild(item);
+        var element = document.getElementById('queue');
+        if (update == true){
+            ol = document.getElementById('ol-queue');
+            parent = ol.parentNode;
+            parent.insertBefore(list, ol);
+            parent.removeChild(ol);
+        } else {
+            element.appendChild(list);
+        }
+    });
+}
+
+function addToQueue(team_id, racer_id, priority=null){
+    console.log(racer_id + ' ' + priority);
+    var action = ['queue', 'create_0'];
+    var params = {'team_id': team_id, 'racer_id': racer_id};
+    if (priority != null){
+        console.log("Priority is not null");
+        var params = {
+            'team_id': team_id,
+            'racer_id': racer_id,
+            'position': priority
+        };
+        var action = ['queue', 'create_1']
+    };
+    console.log(params);
+    client.action(schema, action, params).then(function(result){
+        getQueue(team_id, update=true);
+    });
+}
+
+function executeDraftPick(team_id){
+    console.log("Executing a pick");
+    var action = ['draft', 'pick', 'create']
+    var params = {'team_id': team_id}
+    client.action(schema, action, params).then(function(result){
+        console.log(result);
+    });
+}
+
+getQueue({{team.id}});
+$("#availRacers table tbody").on(
+    "click", "tr #addToQueue",
+    function(){
+        var racer_id = $(this).attr('value');
+        console.log(racer_id);
+        addToQueue({{team.id}}, racer_id);
+    });
+
+$("#queue").on(
+    "click", "ol li #removeFromQueue",
+    function(){
+        var racer_id = $(this).attr('value');
+        console.log('Removing' + racer_id);
+        addToQueue({{team.id}}, racer_id, priority='remove');
+    }
+);
+
+$("#queue").on(
+    "click", "ol li #promoteInQueue",
+    function(){
+        var racer_id = $(this).attr('value');
+        console.log('Promoting' + racer_id);
+        addToQueue({{team.id}}, racer_id, priority='up');
+    }
+);
+
+$("#queue").on(
+    "click", "ol li #demoteInQueue",
+    function(){
+        var racer_id = $(this).attr('value');
+        console.log('Promoting' + racer_id);
+        addToQueue({{team.id}}, racer_id, priority='down');
+    }
+);
+
+$("#queue").on(
+    "click", "ol li #toTopInQueue",
+    function(){
+        var racer_id = $(this).attr('value');
+        console.log('Promoting' + racer_id);
+        addToQueue({{team.id}}, racer_id, priority='top');
+    }
+);
+
+$("#pickFromTop").on(
+    "click",
+    function(){
+        executeDraftPick({{team.id}});
+    }
+);
+
+{% endblock javascript_footer %}

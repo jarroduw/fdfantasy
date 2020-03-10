@@ -14,6 +14,8 @@
         <link href='//fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
         <link rel="shortcut icon" type="image/png" href="{%  static 'favicon.ico' %}"/>
         <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+        <script src="{% static 'rest_framework/js/coreapi-0.1.1.js' %}"></script>
+        <script src="{% url 'api-docs:schema-js' %}"></script>
     </head>
     <body>
         <nav class="navbar navbar-default">
@@ -112,6 +114,13 @@
             }
         </script>
         <script>
+            const coreapi = window.coreapi;
+            const schema = window.schema;
+            let auth = new coreapi.auth.SessionAuthentication({
+                csrfCookieName: 'csrftoken',
+                csrfHeaderName: 'X-CSRFToken',
+            });
+            let client = new coreapi.Client({auth: auth});
             {% block javascript_footer %} {% endblock javascript_footer %}
         </script>
         

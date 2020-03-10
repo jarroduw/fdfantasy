@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %} Draft - {{team.league.name}} {% endblock title %}
+
+{% block title_page %}
+    
+{% endblock title_page %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Draft Not Started!</h3>
+                </div>
+                <div class="panel-body">
+                    <p>You are too early for your draft! The draft board will open 1 hour before your leagues scheduled draft date and time.</p>
+                    <p>Draft starts at: {{team.league.draftdate.draft}}</p>
+                    <p>You have {{team.league.draftdate.draft|timeuntil}} until your draft starts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
