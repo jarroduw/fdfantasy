@@ -16,7 +16,7 @@
                     <ul>
                         <li>League: {{team.league}}</li>
                         <li>Max Picks: {{team.league.max_racers}}</li>
-                        <li>Draft Interval: {{team.league.draft_interval}}</li>
+                        <li>Draft Interval: {{team.league.draft_interval_minutes}}</li>
                     </ul>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                         <div class="panel-heading">
                             <h3 class="panel-title">My Team</h3>
                         </div> 
-                        <div class="panel-body">
+                        <div class="panel-body" style="overflow-y: scroll; height: 200px">
                             {% if myRacers.rows %}
                                 {% render_table myRacers %}
                             {% else %}
@@ -74,7 +74,7 @@
                         <div class="panel-heading">
                             <h3 class="panel-title">Best Available</h3>
                         </div>
-                        <div class="panel-body" id="availRacers">
+                        <div class="panel-body" id="availRacers" style="overflow-y: scroll; height: 400px">
                             {% if availRacers.rows %}
                                 {% render_table availRacers %}
                             {% else %}
@@ -93,7 +93,7 @@
                         <div class="panel-heading">
                             <h3 class="panel-title">Queue</h3>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body" style="overflow-y: scroll; height: 150px">
                             <button type"button" class="btn btn-primary btn-block {% if not onTheClock %}disabled{% endif %}" id="pickFromTop">
                                 Select From Top
                             </button>
@@ -111,7 +111,7 @@
                         <div class="panel-heading">
                             <h3 class="panel-title">Draft Order</h3>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body" style="overflow-y: scroll; height: 70px">
                             <ol>
                                 {% for o in draftOrder %}
                                 <li>{{o.team.name}}</li>
@@ -127,14 +127,14 @@
                         <div class="panel-heading">
                             <h3 class="panel-title">Feed</h3>
                         </div>
-                        <div class="panel-body" id="feed">    
+                        <div class="panel-body" id="feed" style="overflow-y: scroll; height: 400px">    
                             
                             {% if notifications|length > 0 %}
                                 {% for note in notifications %}
                                     <div class="row">
                                         <div class="col-sm-12">
                                             <div class="panel panel-default">
-                                                <div class="panel-body">{note.created_at|timesince}} ago: {{note.msg|safe}}</div>
+                                                <div class="panel-body">{{note.created_at|timesince}} ago: {{note.msg|safe}}</div>
                                             </div>
                                         </div>
                                     </div>

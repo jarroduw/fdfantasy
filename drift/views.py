@@ -751,7 +751,7 @@ class AddDriverToWaiverWire(View):
         pks = request.POST.getlist("drop")
         added = False
         remaining = len(team.racers.all()) - len(pks)
-        if remaining <= league.max_racers:
+        if remaining < league.max_racers:
             with transaction.atomic():
                 for pk in pks:
                     racer = Racer.objects.get(pk=pk)
@@ -775,7 +775,7 @@ class AddDriverToWaiverWire(View):
                 return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
 
         else:
-            diff = len(team.racers.all()) - league.max_racers
+            diff = len(team.racers.all()) - league.max_racers + 1
             if diff == 1:
                 msg = "1 driver"
             else:
@@ -1141,7 +1141,6 @@ class DraftView(View):
 
             ##TODO:
             # need javascript to check if pick has been made
-            # need javascript to update notifications
             # need to get frames to have scroll bars
 
             context = {
@@ -1163,7 +1162,3 @@ class DraftView(View):
             return render(request, 'drift/draftBoard.html', context)
         context = {'team': team}
         return render(request, 'drift/draftBoardToEarly.html', context)
-
-##TODO: Activate driver does not do anything... (need to deploy js as static)
-##TODO: Need draft view (JS) (make sure that it sets waiver priority on conclusion)
-##TODO: Need JS to handle timing and refreshes
