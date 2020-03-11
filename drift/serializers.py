@@ -46,6 +46,7 @@ class ScoringEventSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
+        fields = '__all__'
         
 class DraftQueueSerializer(serializers.ModelSerializer):
     class Meta:

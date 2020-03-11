@@ -169,9 +169,13 @@ def getAllPoints(team, racer):
 class NotificationApi(APIView):
     permission_classes = [IsAuthenticated|ReadOnly]
 
-    def get(self, request):
+    def get(self, request, lastPoll=None):
         data = getNotifications(request.user)
-        serializer = NotificationSerializer(data)
+        if lastPoll is not None:
+            lastPoll = datetime.datetime.fromtimestamp(float(lastPoll))
+            data = data.filter(created_at__gt=lastPoll)
+        data = data.order_by('created_at')
+        serializer = NotificationSerializer(data, many=True)
         return Response(serializer.data)
 
 def getNotifications(user):
@@ -258,8 +262,6 @@ def getAutodraftInstance(draft, tries=20):
     while not running:
         ad = HUEY.scheduled()
         if len(ad) > 0:
-            for a in ad:
-                print(a)
             thisAd = [x for x in ad if x.args[1] == draft.id]
             if len(thisAd) > 0:
                 thisAd = thisAd[0]
@@ -272,15 +274,12 @@ def getAutodraftInstance(draft, tries=20):
     return thisAd
 
 def makeDraftPick(team_id, draft_id):
-    print("In makeDraftPick")
     team = Team.objects.get(pk=team_id)
     do = DraftOrder.objects.filter(league=team.league).order_by('seed')
     myDo = do.get(team=team)
     meIdx = list(do).index(myDo)
-    print("Checking picks list")
     try:
         lastPick = DraftPick.objects.filter(draft=team.league.draftdate).latest('selected_at')
-        print("Inside picks > 0")
         lastPickDo = do.get(team=lastPick.team)
         lastPickIdx = list(do).index(lastPickDo)
         if lastPick.pick_number < len(team.league.team_set.all()):
@@ -290,18 +289,15 @@ def makeDraftPick(team_id, draft_id):
             pick_number = 1
             rd = lastPick.round + 1
     except DraftPick.DoesNotExist:
-        print("No prior picks")
         lastPick = None
         lastPickIdx = -1
         pick_number = 1
         rd = 1
     
     if meIdx - 1 == lastPickIdx or (lastPickIdx == len(do)-1 and meIdx == 0):
-        print("passed idx test")
         now = timezone.now()
         dq = team.draftqueue
         with transaction.atomic():
-            print("In transaction")
             if len(dq.priority) != 0:
                 racer_id = dq.priority.pop(0)
                 racer = Racer.objects.get(pk=racer_id)
@@ -416,20 +412,13 @@ def setDraftDateActive(draft):
         t.start()
         #startAutodraft(draft)
 
-##TODO: Need to add function that loops until there are no picks left and calls task with league.draft_interval_minutes
 def startAutodraft(draft):
-    print("Starting autodraft")
     do = DraftOrder.objects.all().order_by('seed')
     timeUntil = draft.league.draft_interval_minutes*60
     while not draft.finished:
-        print("Looping through for another round")
         for d in do:
-            print("In d loop")
-            print(d.team.name)
             ##Start task for team
             s = DraftPickReservation.schedule(draft, d.team, delay=timeUntil)
-            #r = makeDraftPick.schedule((d.team.id, draft.id,), delay=draft.league.draft_interval_minutes*60)
-            print("scheduled")
             while True:
                 with transaction.atomic():
                     t = DraftPickReservation.getQueued(draft, expired=True)
@@ -441,18 +430,18 @@ def startAutodraft(draft):
                             s.save()
                         break
                 time.sleep(1)
-            ##Check if last pick should be final pick
-            print("Past the r")
-        print("done with d")
+        ##Check if last pick should be final pick
         lastPick = draft.draftpick_set.latest('selected_at')
-        print("Got lastPick")
-        print(lastPick.round, draft.league.max_racers)
         timeUntil = draft.league.draft_interval_minutes*60 - (timezone.now() - lastPick.selected_at).seconds
-        print(timeUntil)
         if lastPick.round == draft.league.max_racers:
-            print("Time to exit")
-            draft.finshed = True
-            draft.save()
+            draft.finished = True
+            draft.save()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+            for d in do:
+                wp = WaiverPriority.objects.create(
+                    team=d.team,
+                    priority=d.seed
+                    )
+                wp.save()
             break
 
 def setDraftDateWarning(draft):

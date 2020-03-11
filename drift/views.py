@@ -1,5 +1,6 @@
 import random
 import hashlib
+import time
 from collections import OrderedDict
 
 from huey.contrib.djhuey import HUEY
@@ -750,7 +751,7 @@ class AddDriverToWaiverWire(View):
         pks = request.POST.getlist("drop")
         added = False
         remaining = len(team.racers.all()) - len(pks)
-        if remaining < league.max_racers:
+        if remaining <= league.max_racers:
             with transaction.atomic():
                 for pk in pks:
                     racer = Racer.objects.get(pk=pk)
@@ -774,7 +775,7 @@ class AddDriverToWaiverWire(View):
                 return HttpResponseRedirect(reverse('drift:acquireDriver', args=[league.id]))
 
         else:
-            diff = len(team.racers.all()) - league.max_racers + 1
+            diff = len(team.racers.all()) - league.max_racers
             if diff == 1:
                 msg = "1 driver"
             else:
@@ -812,7 +813,7 @@ class AddDriverToWaiverWire(View):
 
         ##If no chance you'll get the driver
         claimed_li = WaiverWire.objects.filter(racer=driver_id, active=False, team__in=teamsInLeague)
-        waiverWinners = [x for x in claimed_li if x.priority < waiverPriority.priority]
+        waiverWinners = [x for x in claimed_li if x.team.waiverpriority.priority < waiverPriority.priority]
         claimed = False
         if len(waiverWinners) > 0:
             claimed = True
@@ -1081,12 +1082,13 @@ class DraftView(View):
             dq.save()
 
         dd = team.league.draftdate
+        if dd.finished:
+            return HttpResponseRedirect(reverse('drift:viewFantasyTeam', args=[team.id]))
 
-        now = timezone.now()
-        
+        now = timezone.now()        
         one_hour = dd.draft - datetime.timedelta(hours=1)
         if now >= one_hour:
-            notifications = Notification.objects.filter(created_at__gte=one_hour).order_by('-created_at')
+            notifications = Notification.objects.filter(created_at__gte=one_hour, user=request.user).order_by('-created_at')
             onTheClock = False
             lastPick = None
             timeUntilDue = dd.draft.timestamp()
@@ -1095,21 +1097,26 @@ class DraftView(View):
             myTeam = None
             activePicker = None
             pickNumber = None
-            active = False
+            active = True
             ##NOTE: Opens 1 hour before draft
             if not dd.one_hour_warning:
                 setDraftDateWarning(dd)
             do = DraftOrder.objects.filter(league=team.league).order_by('seed')
             myDo = do.get(team=team)
+
             if now >= team.league.draftdate.draft or dd.started:
                 ##Try to pick up autodraft
-                with transaction.atomic():
-                    thisAd = DraftPickReservation.getQueued(dd)
-                    if len(thisAd) > 1 or len(thisAd) == 0:
-                        raise AttributeError("A pick got skipped")
-                    thisAd = thisAd[0]
-                    timeUntilDue = thisAd.due_at.timestamp()
-                    activePicker = thisAd.team
+                while True:
+                    with transaction.atomic():
+
+                        thisAd = DraftPickReservation.getQueued(dd)
+                        try:
+                            thisAd = thisAd[0]
+                            timeUntilDue = thisAd.due_at.timestamp()
+                            activePicker = thisAd.team
+                            break
+                        except IndexError:
+                            time.sleep(1)
                 try:
                     allPicks = DraftPick.objects.filter(team__in=[x.team for x in do])
                     lastPick = allPicks.latest('selected_at')
@@ -1134,9 +1141,8 @@ class DraftView(View):
 
             ##TODO:
             # need javascript to check if pick has been made
-            # need javascript to execute pick for end of countdown or when clicked, to pick from queue, if not in queue, then from best available
-            # need javascript to add driver to queue
-            # need javascript to change position of driver in queue
+            # need javascript to update notifications
+            # need to get frames to have scroll bars
 
             context = {
                 'team': team,

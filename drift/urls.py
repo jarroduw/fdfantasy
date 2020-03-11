@@ -57,6 +57,7 @@ urlpatterns = [
     path('api/queue/<int:team_id>/', api.QueueAPI.as_view(), name='queue'),
     path('api/queue/<int:team_id>/<int:racer_id>/', api.QueueAPI.as_view(), name='queue'),
     path('api/queue/<int:team_id>/<int:racer_id>/<str:position>/', api.QueueAPI.as_view(), name='queue'),
+    path('api/notification/<str:lastPoll>/', api.NotificationApi.as_view(), name='notification'),
     path('api/token-auth/', rf_views.obtain_auth_token),
     path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico')), name='favicon'),

@@ -240,7 +240,6 @@ class DraftPickReservation(models.Model):
     @classmethod
     def getQueued(cls, draft, expired=False):
         temp = cls.objects.select_for_update().filter(draft=draft, active=True)
-        print(temp)
         if expired:
             temp = temp.filter(due_at__lte=timezone.now())
         return temp
