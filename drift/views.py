@@ -682,7 +682,7 @@ class ViewFantasyTeam(View):
 
         for racer in teamData.racers.all():
             racerObj = TeamRacerObject(racer, team_id, event)
-            if racer not in active:
+            if racerObj.racer not in [x.racer for x in active]:
                 inactive.append(racerObj)
 
         return {'team': teamData, 'active': active, 'inactive': inactive}
@@ -1162,3 +1162,14 @@ class DraftView(View):
             return render(request, 'drift/draftBoard.html', context)
         context = {'team': team}
         return render(request, 'drift/draftBoardToEarly.html', context)
+
+##BUG: There is something weird when you activate a player, they don't disappear from inactive list
+##TODO: Need analysis to decide on scoring options
+##TODO: Need interface for league owners to set their scoring (with default settings as a baseline)
+##TODO: Need table view for racer with league specific scoring
+##TODO: Need table view for racer with actual scoring event counts
+##TODO: First login seems to hang... no bueno
+##TODO: Sexier look and feel
+##TODO: Mock draft no other users
+##TODO: Mock draft with other users
+##TODO: Configure driver scraper to get their image
