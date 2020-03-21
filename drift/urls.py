@@ -38,6 +38,7 @@ urlpatterns = [
     path('leagues/<int:pk>/', views.LeagueView.as_view(), name='league'),
     path('leagues/create/', views.CreateLeagueView.as_view(), name='createLeague'),
     path('leagues/create/<int:league_id>/', views.CreateLeagueView.as_view(), name='createLeague'),
+    path('leagues/createScoring/<int:league_id>/', views.CreateLeagueScoringView.as_view(), name='createLeagueScoring'),
     path('leagues/invite/<int:league_id>/', views.InviteUsersToJoinLeague.as_view(), name='inviteToJoinLeague'),
     path('leagues/acquire/<int:league_id>/', views.AcquireDriver.as_view(), name='acquireDriver'),
     path('leagues/acquire/waive/<int:driver_id>/<int:team_id>/', views.AddDriverToWaiverWire.as_view(), name='waiveDriver'),

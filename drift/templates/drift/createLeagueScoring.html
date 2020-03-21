@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %} Create League - Set Scoring {% endblock title %}
+
+{% block title_page %}
+    <h3>Create a League - Set Scoring</h3>
+{% endblock title_page %}
+
+{% block content %}
+    <p>Here we set the point values for each of the scoring events. For each type of event, we've specified a default value that distributes the likelihood of winning a given season without giving the winner of Formula Drift a guaranteed win.</p>
+    <div class="content container">
+        <form method="POST">
+            {% csrf_token %}
+            {% for opt in formOpts %}
+                <p>
+                    <label for="id_{{opt.0}}">{{opt.0|title}}</label>
+                    <input type="number" id="id_{{opt.0}}" required name="{{opt.0}}" value="{{opt.1}}">
+                </p>
+            {% endfor %}
+            <input type="submit" value="Save League Scoring">
+        </form>
+    </div>
+
+{% endblock content %}
+
+{% block javascript_footer %}
+
+{% endblock %}

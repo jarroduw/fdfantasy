@@ -119,18 +119,29 @@ class Race(models.Model):
 class ScoringValue(models.Model):
     AWARDS = (
         ('win', 'win',),
-        ('qualify', 'quality',),
+        ('qualify', 'qualify',),
         ('qualify-position', 'qualify-position'),
         ('top-32', 'top-32'),
         ('top-16', 'top-16'),
         ('top-8', 'top-8',),
         ('quarters', 'quarters',),
         ('final', 'final',),
-        ('podium', 'podium',),
-        ('one-more-time', 'one-more-time',),
-        ('checked-in', 'checked-in',),
-        ('clean-sweep', 'clean-sweep',)
+        #('one-more-time', 'one-more-time',),
+        #('checked-in', 'checked-in',),
+        #('clean-sweep', 'clean-sweep',)
+        ('pro2-bonus', 'pro2-bonus',)
     )
+    DEFAULTS = {
+        'win': 1,
+        'qualify': 2,
+        'qualify-position': 3,
+        'top-32': 4,
+        'top-16': 5,
+        'top-8': 6,
+        'quarters': 7,
+        'final': 8,
+        'pro2-bonus': 9,
+    }
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     league = models.ForeignKey(League, models.CASCADE)

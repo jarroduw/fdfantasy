@@ -257,7 +257,7 @@ class CreateLeagueView(View):
                     draft = form2.save(commit=False)
                     draft.league = league
                     draft.save()
-                    return HttpResponseRedirect(reverse('drift:league', args=[league.id]))
+                    return HttpResponseRedirect(reverse('drift:createLeagueScoring', args=[league.id]))
                 else:
                     form2.add_error(None, 'Draft must be in future')
         context = {'leagueForm': form1, 'draftForm': form2}
@@ -276,6 +276,57 @@ class CreateLeagueView(View):
         context = {'leagueForm': form1, 'draftForm': form2}
 
         return render(request, 'drift/createLeague.html', context=context)
+
+class CreateLeagueScoringView(View):
+
+    def post(self, request, league_id):
+        """Save new or updated league"""
+
+        active_season = Season.objects.filter(active=True).latest('end')
+
+        league = League.objects.get(id=league_id)
+        if request.user != league.race_official:
+            raise PermissionDenied
+        ##Get from post
+        vals = []
+        invalidList = []
+        for x in ScoringValue.AWARDS:
+            test = request.POST[x[0]]
+            if not isinstance(test, int) or isinstance(test, float):
+                invalidList.append(x[0])
+                vals.append([x[0], ScoringValue.DEFAULTS[x[0]]])
+        print(invalidList)
+
+        ##TODO: Check for validity
+        if invalidList != []:
+            for x in ScoringValue.AWARDS:
+                temp = request.POST[x[0]]
+                sv = ScoringValue.objects.filter(league=league, award=x[0])
+                if len(sv) == 0:
+                    sv = ScoringValue(league=league, award=x[0], points=temp)
+                else:
+                    sv = sv[0]
+                    sv.points = temp
+                sv.save()
+            return HttpResponseRedirect(reverse('drift:league', args=[league.id]))
+        context = {'league': league, 'formOpts': vals, 'errors': invalidList}
+        return render(request, 'drift/createLeagueScoring.html', context=context)
+
+    def get(self, request, league_id):
+        league = League.objects.get(id=league_id)
+        ## generate list of triples with options
+        scoringVals = ScoringValue.objects.filter(league=league).order_by('created_at')
+        vals = []
+        if len(scoringVals) > 0:
+            for val in scoringVals:
+                vals.append([val.award, val.points])
+        else:
+            for x in ScoringValue.AWARDS:
+                vals.append([x[0], ScoringValue.DEFAULTS[x[0]]])
+
+        context = {'league': league, 'formOpts': vals}
+
+        return render(request, 'drift/createLeagueScoring.html', context=context)
 
 class InviteUsersToJoinLeague(View):
 
@@ -1158,12 +1209,10 @@ class DraftView(View):
                 'roundNumber': roundNumber,
                 'pickNumber': pickNumber
                 }
-            print(context['timeUntilDue'])
             return render(request, 'drift/draftBoard.html', context)
         context = {'team': team}
         return render(request, 'drift/draftBoardToEarly.html', context)
 
-##BUG: There is something weird when you activate a player, they don't disappear from inactive list
 ##TODO: Need analysis to decide on scoring options
 ##TODO: Need interface for league owners to set their scoring (with default settings as a baseline)
 ##TODO: Need table view for racer with league specific scoring
