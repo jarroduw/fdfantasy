@@ -146,8 +146,22 @@ class ActivateDriverApi(APIView):
     def post(self, request):
         serializer = TeamActiveSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.validated_data
+            print(data)
+            teamActive = TeamActive.objects.filter(team=data['team'])
+            actualActive = {}
+            for r in teamActive:
+                try:
+                    test = actualActive[r.racer]
+                except KeyError:
+                    d = teamActive.filter(racer=r.racer).latest('modified_at')
+                    if d.status:
+                        actualActive[r.racer] = d
+
+            if len(actualActive) < data['team'].league.max_racers or not data['status']:
+                serializer.save()
+                return Response({'msg': 'Driver status changed'}, status=status.HTTP_201_CREATED)
+            return Response({'msg': 'Too many drivers activated (%s) only %s allowed' % (len(actualActive), data['team'].league.max_racers,)}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PointsApi(APIView):

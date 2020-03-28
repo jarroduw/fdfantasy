@@ -164,13 +164,12 @@
                type: "POST",
                url: url,
                data: data, // serializes the form's elements.
-               done: function(data)
+               success: function(data)
                {
-                   alert(data); // show response from the php script.
+                    window.location.reload();
+                    alert(data['msg']);
                }
              });
-        window.location.reload();
-    
     });
 
 {% endblock %}
