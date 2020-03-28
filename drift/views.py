@@ -660,7 +660,10 @@ class TeamRacerObject(object):
         self.id = self.racer.id
         self.eventObj = event
         self.ptsOrder = [x for x in ScoringValue.AWARDS if x[0] != 'pro2-bonus']
-        self.pro2Multiplier = ScoringValue.objects.filter(award='pro2-bonus')[0].points
+        try:
+            self.pro2Multiplier = ScoringValue.objects.filter(award='pro2-bonus')[0].points
+        except IndexError:
+            self.pro2Multiplier = 1
         if not racer.pro2:
             self.pro2Multiplier = 1
 
