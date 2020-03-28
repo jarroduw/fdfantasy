@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load render_table from django_tables2 %}
 
 {% block title %} Team - {{team.name}} {% endblock title %}
 
@@ -7,6 +8,7 @@
 {% endblock title_page %}
 
 {% block content %}
+
     <div class="row">
         <div class="col-sm-12">
             <p>League: <a href="{% url 'drift:league' team.league.id %}">{{team.league.name}}</a></p>
@@ -49,14 +51,14 @@
     </div>
 
     <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-12">
         <h4>Active</h4>
             <p><em>Active drivers count toward the next event's score. Once the event starts (i.e. the day of), the lineup will be locked.</em></p>
             {% if active|length == 0 %}
                 <li>There are no active drivers. If you have drivers on your team, click the "activate" button to move them into this slot.</li>
             {% else %}
                 <table class='table'>
-                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>this event</th><th>all</th></thead>
+                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>all</th></thead>
                     <tbody>
                         {% for racer in active %}
                             <tr>
@@ -73,14 +75,25 @@
                                 </td>
 
                                 <td><a href="{% url 'drift:viewRacer' racer.id %}">{{racer.racer.name}}</a></td>
+                                
+                                <td>{% if racer.racer.pro2 %}<span class="glyphicon glyphicon-ok"></span>{% else %}<span class="glyphicon glyphicon-minus-sign"></span>{% endif %}</td>
+                                {% for pt in racer.eventPointsLi %}
+                                    <td>{{pt}}</td>
+                                {% endfor %}
                                 <td>{{racer.eventPoints}}</td>
+                                {% for pt in racer.allPointsLi %}
+                                    <td>{{pt}}</td>
+                                {% endfor %}
                                 <td>{{racer.allPoints}}</td>
                             </tr>
                         {% endfor %}
                         <tr>
                             <td></td>
                             <td>TOTAL</td>
+                            <td></td>
+                            {% for x in scoringValHeaders %}<td></td>{% endfor %}
                             <td>{{totalPoints.active.eventPoints}}</td>
+                            {% for x in scoringValHeaders %}<td></td>{% endfor %}
                             <td>{{totalPoints.active.allPoints}}</td>
                         </tr>
                     </tbody>
@@ -93,7 +106,7 @@
                 <li>There are no inactive drivers</li>
             {% else %}
                 <table class="table">
-                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>this event</th><th>all</th></thead>
+                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>all</th></thead>
                     <tbody>
                     {% for racer in inactive %}
                         <tr>
@@ -109,14 +122,24 @@
                                 {% endif %}
                             </td>
                             <td><a href="{% url 'drift:viewRacer' racer.id %}">{{racer.racer.name}}</a></td>
+                            <td>{% if racer.racer.pro2 %}<span class="glyphicon glyphicon-ok"></span>{% else %}<span class="glyphicon glyphicon-minus-sign"></span>{% endif %}</td>
+                            {% for pt in racer.eventPointsLi %}
+                                <td>{{pt}}</td>
+                            {% endfor %}
                             <td>{{racer.eventPoints}}</td>
+                            {% for pt in racer.allPointsLi %}
+                                <td>{{pt}}</td>
+                            {% endfor %}
                             <td>{{racer.allPoints}}</td>
                         </tr>
                     {% endfor %}
                     <tr>
                         <td></td>
                         <td>TOTAL</td>
+                        <td></td>
+                        {% for x in scoringValHeaders %}<td></td>{% endfor %}
                         <td>{{totalPoints.inactive.eventPoints}}</td>
+                        {% for x in scoringValHeaders %}<td></td>{% endfor %}
                         <td>{{totalPoints.inactive.allPoints}}</td>
                     </tr>
                     </tbody>

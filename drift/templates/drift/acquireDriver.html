@@ -27,6 +27,27 @@
         </ul>
     {% endif %}
 
-    {% render_table available %}
+    <table class='table'>
+        <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Team</th><th>Manuf</th><th>Bio</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>all</th></thead>
+        <tbody>
+            {% for racer in available %}
+                <tr>
+                    <td>
+                        <a href="{% url 'drift:trade' team.id racer.id %}" class="btn btn-primary">Request Trade</a>
+                    </td>
+
+                    <td><a href="{% url 'drift:viewRacer' racer.id %}">{{racer.racer.name}}</a></td>
+                    <td>{{racer.racer.team_name}}</td>
+                    <td>{{racer.racer.car_manuf}}</td>
+                    <td><a href="">Bio</a> </td>
+                    <td>{% if racer.racer.pro2 %}<span class="glyphicon glyphicon-ok"></span>{% else %}<span class="glyphicon glyphicon-minus-sign"></span>{% endif %}</td>
+                    {% for pt in racer.allPointsLi %}
+                        <td>{{pt}}</td>
+                    {% endfor %}
+                    <td>{{racer.allPoints}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     
 {% endblock content %}

@@ -50,6 +50,12 @@ class RacerTableLeague(RacerTable):
         attrs = {'class': 'table'}
         sequence = ('id', '...', 'driver_url_slug')
 
+class RacerTableManual(tables.Table):
+    
+
+    class Meta:
+        attrs = {'class': 'table'}
+
 class CheckBoxColumnWithName(tables.CheckBoxColumn):
 
     @property

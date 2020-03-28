@@ -654,13 +654,51 @@ class TeamRacerObject(object):
     """Holds data about a racer to make presentation easier"""
 
     def __init__(self, racer, team_id, event):
-        self.team = Team.objects.get(pk=team_id)
+        if team_id is not None:
+            self.team = Team.objects.get(pk=team_id)
         self.racer = racer
         self.id = self.racer.id
+        self.eventObj = event
+        self.ptsOrder = [x for x in ScoringValue.AWARDS if x[0] != 'pro2-bonus']
+        self.pro2Multiplier = ScoringValue.objects.filter(award='pro2-bonus')[0].points
+        if not racer.pro2:
+            self.pro2Multiplier = 1
 
-        points = self.racer.scoringevent_set.filter(event__end__lte=event.end)
-        self.allPoints = sum([x.value.points for x in points])
-        self.eventPoints = sum([x.value.points for x in points.filter(event=event)])
+        if self.eventObj is not None:
+            allPoints = self.racer.scoringevent_set.filter(event__end__lte=event.end)
+            eventPoints = allPoints.filter(event=event)
+
+            self.eventPointsDic = {}
+            for pts in eventPoints:
+                try:
+                    self.eventPointsDic[pts.value.award] += (pts.value.points*self.pro2Multiplier)
+                except KeyError:
+                    self.eventPointsDic[pts.value.award] = (pts.value.points*self.pro2Multiplier)
+            self.eventPointsLi = []
+            for k in self.ptsOrder:
+                try:
+                    val = self.eventPointsDic[k[0]]
+                except KeyError:
+                    val = 0
+                self.eventPointsLi.append(val)
+            self.eventPoints = sum(self.eventPointsLi)
+        else:
+            allPoints = self.racer.scoringevent_set.all()
+
+        self.allPointsDic = {}
+        for pts in allPoints:
+            try:
+                self.allPointsDic[pts.value.award] += (pts.value.points*self.pro2Multiplier)
+            except KeyError:
+                self.allPointsDic[pts.value.award] = (pts.value.points*self.pro2Multiplier)
+        self.allPointsLi = []
+        for k in self.ptsOrder:
+            try:
+                val = self.allPointsDic[k[0]]
+            except KeyError:
+                val = 0
+            self.allPointsLi.append(val)
+        self.allPoints = sum(self.allPointsLi)
 
 class ViewFantasyTeam(View):
     ##View by event, if same day or later than event start, show active, but not writeable
@@ -700,6 +738,8 @@ class ViewFantasyTeam(View):
         context['owner'] = request.user == team.owner
         context['events'] = events
         context['nextEvent'] = nextEvent
+        context['scoringValHeaders'] = [x[1] for x in ScoringValue.AWARDS if x[1] != 'pro2-bonus']
+        context['activeTable'] = RacerTableManual(context['active'])
 
         context['totalPoints'] = {
             'active': {
@@ -759,18 +799,18 @@ class AcquireDriver(View):
                 unavailableList.append(racer.id)
 
         available = Racer.objects.all().exclude(id__in=unavailableList)
-        availableTable = RacerTableLeague(available, team=ownerTeam)
-        RequestConfig(request, paginate=False).configure(availableTable)
-
+        available = [TeamRacerObject(x, None, None) for x in available]
+        
         waiverDrivers = ownerTeam.waiverwire_set.filter(active=True)
 
         context = {
-            'available': availableTable,
+            'available': available,
             'owner': request.user,
             'team': ownerTeam,
             'league': league,
             'waiverDrivers': waiverDrivers,
-            'waiverOrder': ownerTeam.waiverpriority.getLeagueOrderTeams()
+            'waiverOrder': ownerTeam.waiverpriority.getLeagueOrderTeams(),
+            'scoringValHeaders': [x[1] for x in ScoringValue.AWARDS if x[1] != 'pro2-bonus'],
         }
 
         return render(request, 'drift/acquireDriver.html', context)
@@ -990,13 +1030,17 @@ class TradeView(View):
             racersInLeague = []
             for team1 in teamsInLeague:
                 racersInLeague.extend(team1.racers.all())
-
-            racers = RacerTableTrade(racersInLeague, team=team)
-            RequestConfig(request, paginate=False).configure(racers)
+            racers = []
+            for racer in racersInLeague:
+                racers.append(TeamRacerObject(racer, team_id, event=None))
+            #racers = RacerTableTrade(racersInLeague, team=team)
+            #RequestConfig(request, paginate=False).configure(racers)
             context = {
                 'tradesToMe': tradesToMe,
                 'tradesToOthers': tradesToOthers,
-                'racers': racers
+                'racers': racers,
+                'scoringValHeaders': [x[1] for x in ScoringValue.AWARDS if x[1] != 'pro2-bonus'],
+                'team': team
             }
             return render(request, 'drift/tradeView.html', context)
         else:
@@ -1214,9 +1258,10 @@ class DraftView(View):
         return render(request, 'drift/draftBoardToEarly.html', context)
 
 ##TODO: Need analysis to decide on scoring options
-##TODO: Need interface for league owners to set their scoring (with default settings as a baseline)
 ##TODO: Need table view for racer with league specific scoring
 ##TODO: Need table view for racer with actual scoring event counts
+##TODO: Need table view for team with league specific scoring
+##TODO: Need table view for team with actual scoring event counts
 ##TODO: First login seems to hang... no bueno
 ##TODO: Sexier look and feel
 ##TODO: Mock draft no other users

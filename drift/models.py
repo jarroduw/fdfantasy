@@ -118,14 +118,14 @@ class Race(models.Model):
 
 class ScoringValue(models.Model):
     AWARDS = (
-        ('win', 'win',),
-        ('qualify', 'qualify',),
-        ('qualify-position', 'qualify-position'),
-        ('top-32', 'top-32'),
-        ('top-16', 'top-16'),
-        ('top-8', 'top-8',),
-        ('quarters', 'quarters',),
-        ('final', 'final',),
+        ('win', 'W',),
+        ('qualify', 'Q',),
+        ('qualify-position', 'QP'),
+        ('top-32', 'T32'),
+        ('top-16', 'T16'),
+        ('top-8', 'T8',),
+        ('quarters', 'T4',),
+        ('final', 'T2',),
         #('one-more-time', 'one-more-time',),
         #('checked-in', 'checked-in',),
         #('clean-sweep', 'clean-sweep',)
@@ -165,7 +165,6 @@ class Team(models.Model):
 class ScoringEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
-    team = models.ForeignKey(Team, models.CASCADE)
     racer = models.ForeignKey(Racer, models.CASCADE, null=True)
     event = models.ForeignKey(Event, models.CASCADE)
     value = models.ForeignKey(ScoringValue, models.CASCADE)

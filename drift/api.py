@@ -154,16 +154,42 @@ class PointsApi(APIView):
     permission_classes = [IsAuthenticated|ReadOnly]
 
     def get(self, request, event, team, racer):
-        data = getPoints(event, team, racer)
+        data = getPoints(event, racer)
         serializer = ScoringEventSerializer(data)
         return Response(serializer.data)
 
-def getPoints(event, team, racer):
-    data = ScoringEvent.objects.all(team=team, event=event, racer=racer)
+class Scoring(object):
+    """Class defining a row of scoring data for a team"""
+
+    def __init__(self, team_id, racer_id, event_id=None):
+        self.team = team_id
+        self.teamObj = Team.objects.get(pk=team_id)
+        self.racer = racer_id
+        self.racerObj = Racer.objects.get(pk=racer_id)
+        self.event = event
+        if self.event is not None:
+            self.eventObj = Event.objects.get(pk=event_id)
+            eventPoints = getPoints(self.event, self.racer)
+            self.eventPoints = {}
+            for pts in eventPoints:
+                try:
+                    self.eventPoints[pts.award]+=points
+                except KeyError:
+                    self.eventPoints[pts.award] = points
+        allPoints = getAllPoints(self.racer)
+        self.allPoints = {}
+        for pts in allPoints:
+            try:
+                self.allPoints[pts.award]+=points
+            except KeyError:
+                self.allPoints[pts.award] = points
+
+def getPoints(event, racer):
+    data = ScoringEvent.objects.all(event=event, racer=racer)
     return data
 
-def getAllPoints(team, racer):
-    data = ScoringEvent.objects.all(team=team, racer=racer)
+def getAllPoints(racer):
+    data = ScoringEvent.objects.all(racer=racer)
     return data
 
 class NotificationApi(APIView):
