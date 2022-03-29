@@ -48,7 +48,7 @@ class DriverScraper(Scraper):
 
     def _getName(self, summary):
         name = summary.findAll('h1', attrs={'class': 'driver-name'})
-        name = name[0].text
+        name = name[0].text.replace("Rookie", "")
         return name
 
     def _getInfo(self, summary):
@@ -62,6 +62,38 @@ class DriverScraper(Scraper):
             except KeyError:
                 infoDict[infoLi[0].strip()] = infoLi[1].strip()
         return infoDict
+
+    def postData(self, base="http://localhost:8000/", pro2=False, tokenPath='__sensitive_apiToken.txt'):
+        print(f"Posting data: {self.__dict__}")
+        with open(tokenPath) as fi:
+            token = fi.read().strip()
+        header = {'Authorization': 'Token %s' % (token,)}
+        to_post = {
+            'name': self.name,
+            'team_name': self.info['Team Name'],
+            'driver_url_slug': self.url_slug,
+            'car_number': self.info['Car Number'],
+            'car_manuf': self.info['Car Manufacturer'],
+            'pro2': pro2
+            }
+        check = requests.get(
+            base + 'api/racer/',
+            json={"driver_url_slug": self.url_slug},
+            headers=header
+        )
+        if check.status_code == 200:
+            matching = check.json()
+            if len(matching) > 0:
+                result = matching[0]
+                return result
+        result = requests.post(
+            base + 'api/racer/',
+            json=to_post,
+            headers=header
+        )
+        print(f"Status code: {result.status_code}")
+        print(f"Result: {result.json()}")
+        return result.json()
 
 class DriverOverviewScraper(Scraper):
 
@@ -85,44 +117,25 @@ class DriverOverviewScraper(Scraper):
                     self.extracted.append(ds)
 
 if __name__ == '__main__':
-    dos = DriverOverviewScraper('drivers/pro')
-    dos.fetch()
-    dos.checkAndParse()
-    dos.extract()
+    # dos = DriverOverviewScraper('drivers/pro')
+    # dos.fetch()
+    # dos.checkAndParse()
+    # dos.extract()
 
     #dos.saveSoupToFile('test_driveroverview.html')
 
-    racer_header = ['id', 'name', 'car_number', 'car_manuf', 'team_name', 'driver_url_slug', 'class']
-    ranking_header = ['racer', 'rank', 'points']
-    with open('racer.csv', 'w') as racer_fi:
-        with open('ranking.csv', 'w') as ranking_fi:
-            racer_writer = csv.writer(racer_fi)
-            racer_writer.writerow(racer_header)
-
-            ranking_writer = csv.writer(ranking_fi)
-            ranking_writer.writerow(ranking_header)
-            for url in ['pro', 'pro2']:
-                dos = DriverOverviewScraper('drivers/'+url)
-                dos.fetch()
-                dos.checkAndParse()
-                dos.extract()
-                for r, racer in enumerate(dos.extracted):
-                    new = {}
-                    new['id'] = r
-                    new['driver_url_slug'] = racer.url_slug
-                    new['team_name'] = racer.info['Team Name']
-                    new['name'] = racer.name
-                    new['car_number'] = racer.info['Car Number']
-                    new['car_manuf'] = racer.info['Car Manufacturer']
-                    new['class'] = url
-                    racer_writer.writerow([new[x] for x in racer_header])
-                    
-                    #results1.append(requests.post('http://localhost:8000/api/addRacer/', json=new))
-                    
-                    new2 = {}
-                    #new2['racer'] = results1[-1].json()['id']
-                    new2['racer'] = r
-                    new2['rank'] = racer.ranks['2019RANK']
-                    new2['points'] = racer.ranks['2019Points']
-                    #results2.append(requests.post('http://localhost:8000/api/addRanking/', json=new2))
-                    ranking_writer.writerow([new2[x] for x in ranking_header])
+    for url in ['pro', 'prospec']:
+        dos = DriverOverviewScraper('drivers/'+url)
+        dos.fetch()
+        dos.checkAndParse()
+        dos.extract()
+        for r, racer in enumerate(dos.extracted):
+            result = racer.postData(pro2=url=='prospec')
+            
+            # new2 = {}
+            # #new2['racer'] = results1[-1].json()['id']
+            # new2['racer'] = r
+            # new2['rank'] = racer.ranks['2019RANK']
+            # new2['points'] = racer.ranks['2019Points']
+            # #results2.append(requests.post('http://localhost:8000/api/addRanking/', json=new2))
+            # ranking_writer.writerow([new2[x] for x in ranking_header])

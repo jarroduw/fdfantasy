@@ -66,17 +66,19 @@ class ResultOverviewScraper(Scraper):
             self.extracted.append(rs)
 
 def postData(extracted, scrape_datetime, pro2=False, base='http://localhost:8000/', tokenPath='__sensitive_apiToken.txt'):
-    with open(tokenPath)) as fi:
+    with open(tokenPath) as fi:
         token = fi.read().strip()
     header = {'Authorization': 'Token %s' % (token,)}
     results_race = []
     results_q1 = []
     results_q2 = []
     for o in extracted:
-        event = o.url_slug.replace('/results/', '/schedule/').replace('/pro2', '').replace('/pro', '')
+        event = o.url_slug.replace('/results/', '/schedule/').replace('/prospec', '').replace('/pro', '')
+        print(event)
         
         qDic = {'schedule_url_slug': event}
         eventObj = requests.get(base + 'api/event/', json=qDic)
+        print(eventObj.json())
         eventId = eventObj.json()['id']
         for rd in [32, 16, 8, 4, 2]:
             try:
@@ -148,8 +150,9 @@ def postData(extracted, scrape_datetime, pro2=False, base='http://localhost:8000
 
 
 if __name__ == '__main__':
+    ##TODO: Make a historic results scraper, which will check if an event exists, if a driver exists, etc. during post. using the historic results as the scrape tree
     scrape_datetime = format(datetime.datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
-    ros_pro = ResultOverviewScraper('standings/2019/pro')
+    ros_pro = ResultOverviewScraper('standings/2021/pro')
     ros_pro.fetch()
     ros_pro.checkAndParse()
     ros_pro.extract()
@@ -157,7 +160,7 @@ if __name__ == '__main__':
 
     #ros_pro.saveSoupToFile('test_standingsoverview_pro.html')
 
-    ros_2 = ResultOverviewScraper('standings/2019/pro2')
+    ros_2 = ResultOverviewScraper('standings/2021/pro2')
     ros_2.fetch()
     ros_2.checkAndParse()
     ros_2.extract()

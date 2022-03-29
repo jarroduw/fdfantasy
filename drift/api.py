@@ -111,9 +111,10 @@ class RacerApi(APIView):
     def get(self, request, format=None):
         """API call to get object based on features in json"""
         data = request.data
-        result = Racer.objects.filter(**data)
-        serializer = RacerSerializer(*result)
+        result = Racer.objects.filter(**data).all()
+        serializer = RacerSerializer(result, many=True)
         return Response(serializer.data)
+        
 
 class RankingApi(APIView):
     permission_classes = [IsAuthenticated|ReadOnly]
