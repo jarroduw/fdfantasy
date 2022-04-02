@@ -77,6 +77,11 @@ if __name__ == "__main__":
     ss.checkAndParse()
     ss.extract()
 
+    tokenPath = '__sensitive_apiToken.txt'
+    with open(tokenPath) as fi:
+        token = fi.read().strip()
+    header = {'Authorization': 'Token %s' % (token,)}
+
     results = []
     for event in ss.extracted:
         print(event)
@@ -87,7 +92,8 @@ if __name__ == "__main__":
         new['address'] = event.addr
         new['start'] = format(event.startDate, '%Y-%m-%d')
         new['end'] = format(event.endDate, '%Y-%m-%d')
-        result = requests.post('http://localhost:8000/api/addEvent/', json=new)
+        print(new)
+        result = requests.post('http://localhost:8000/api/event/', json=new, headers=header)
         results.append(result)
 
     #ss.saveSoupToFile('test.html')

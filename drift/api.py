@@ -1,6 +1,7 @@
 import random
 
 import time
+import datetime
 
 from huey.contrib.djhuey import HUEY
 
@@ -75,9 +76,19 @@ class EventApi(APIView):
 
     def get(self, request, format=None):
         """API call to get object based on features in json"""
+        print("In get")
         data = request.data
-        result = Event.objects.filter(**data)
-        serializer = EventSerializer(*result)
+        print(data)
+        if 'get_latest' in data.keys():
+            print("In get latest")
+            result = Event.objects.filter(
+                end__gte=datetime.datetime.utcnow()
+                ).order_by('end').first()
+        else:
+            result = Event.objects.filter(**data).first()
+        print("Serializing")
+        print(result)
+        serializer = EventSerializer(result)
         return Response(serializer.data)
 
 class QualifyApi(APIView):
@@ -85,7 +96,21 @@ class QualifyApi(APIView):
     def post(self, request, format=None):
         """API call to set the qualify rank"""
 
-        serializer = QualifySerializer(data=request.data)
+        data = request.data
+        scraped_date = data['scraped']
+        del data['scraped']
+        print(data)
+        result = Qualify.objects.filter(**data).all()
+        
+        if len(result) > 0:
+            print("===========")
+            print("FOUND EXISTING RECORD")
+            ## If records exist, skip over
+            serializer_exists = QualifySerializer(result.first())
+            return Response(serializer_exists.data)
+        ## Otherwise, add to it
+        data['scraped'] = scraped_date
+        serializer = QualifySerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -132,7 +157,36 @@ class RaceApi(APIView):
     permission_classes = [IsAuthenticated|ReadOnly]
     def post(self, request, format=None):
         """API Call to store a race"""
-        serializer = RaceSerializer(data=request.data)
+        data = request.data
+        scraped_date = data['scraped']
+        winner = data['winner']
+        del data['scraped']
+        del data['winner']
+        print(data)
+        result = Race.objects.filter(**data).all()
+        print(result)
+        
+        if len(result) > 0:
+            print("===========")
+            print("FOUND EXISTING RECORD")
+            ## If records exist, skip over
+            if result[0].winner == winner:
+                print("--> Existing record has not changed")
+                ## Already have the winner
+                serializer_exists = RaceSerializer(result.first())
+            else:
+                print("--> Existing record has changed winner, saving")
+                ## NOTE: I HAVE NOT TESTED THIS ELSE STATEMENT OR THE result[0].winner == winner, will test after long-beach
+                ## Don't have a winner, going to update record and return
+                temp = result.first()
+                temp.update(winner = winner)
+                temp.refresh_from_db()
+                serializer_exists = RaceSerializer(temp)
+            return Response(serializer_exists.data)
+        ## Otherwise, add to it
+        print("LET'S GO!")
+        data['scraped'] = scraped_date
+        serializer = RaceSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
