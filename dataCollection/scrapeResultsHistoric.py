@@ -1,15 +1,18 @@
 import requests
 import datetime
+import logging
 from bs4 import BeautifulSoup
 from baseScrape import Scraper
 from scrapeDrivers import DriverScraper
 from scrapeSchedule import EventScraper
 
+logger = logging.getLogger(__name__)
+
 class ResultScraper(Scraper):
 
     def extract(self):
         eventName = self.soup.find('h1', attrs={'class': 'result-title'})
-        print(eventName.text)
+        logger.info("Extracting event for: %s", eventName.text)
         self.event = eventName.text
         self.outcomes = {}
         results = self.soup.findAll('div', attrs={'class': 'result-panel'})
@@ -25,7 +28,7 @@ class ResultScraper(Scraper):
 
     def _getBracketRound(self, rd):
         rd = rd.replace("resultPanel", "")
-        print("ROUND", rd)
+        logger.debug("ROUND: %s", rd)
         rd = int(rd)
         self.round = rd
 
@@ -33,20 +36,15 @@ class ResultScraper(Scraper):
         """Takes a given race, and first looks for a driver that advances. Then looks for all drivers and
         assumes that the one that's not the winner is the loser. If no winner, then it blows stuff up."""
 
-        ##TODO: Re-structure so it finds both drivers and gets characteristics, returns winner position in list
 
         ## Start by getting driver pairs
         all_drivers = race.find_all("div", {'class': 'driver'})
         new_data_drivers = []
         for driver in all_drivers:
             new_data_drivers.append(self._getDriverChar(driver))
-        print("=========================")
-        print(new_data_drivers)
-        print("=========================")
 
         new_data_drivers.sort(key=lambda x: x['rank'])
 
-        ##TODO: Change structure so it returns top seed and bottom seed and includes a true/false for winner
         data = {
             'top_seed': new_data_drivers[0],
             'bottom_seed': new_data_drivers[1]
@@ -55,15 +53,14 @@ class ResultScraper(Scraper):
             self.outcomes[self.round].append(data)
         except KeyError:
             self.outcomes[self.round] = [data]
-        print(
-            "%s (%s: winner=%s) top seed over %s (%s: winner=%s)" % (
-                data['top_seed']['url'],
-                data['top_seed']['rank'],
-                data['top_seed']['winner'],
-                data['bottom_seed']['url'],
-                data['bottom_seed']['rank'],
-                data['bottom_seed']['winner'],
-                )
+        logger.info(
+            "%s (%s: winner=%s) top seed over %s (%s: winner=%s)",
+            data['top_seed']['url'],
+            data['top_seed']['rank'],
+            data['top_seed']['winner'],
+            data['bottom_seed']['url'],
+            data['bottom_seed']['rank'],
+            data['bottom_seed']['winner'],
             )
 
     def _getDriverChar(self, driver):
@@ -74,18 +71,19 @@ class ResultScraper(Scraper):
             qRank = int(qRank)
         else:
             qRank = 99
-        winner_found = driver.find(lambda tag: tag.name=='div' and tag.get('class') == ['driver', 'advance'])
+        winner_found = driver["class"]
         winner = True
-        if winner_found is None:
+        if "advance" not in winner_found:
             winner = False
         return {'url': driverUrl, 'rank': qRank, 'winner': winner}
 
     def postData(self, scrape_datetime, pro2=False, base='http://localhost:8000/', tokenPath='__sensitive_apiToken.txt'):
+        logger.info("Posting data")
         with open(tokenPath) as fi:
             token = fi.read().strip()
         header = {'Authorization': 'Token %s' % (token,)}
         event = self.url_slug.replace('/results/', '/schedule/').replace('/prospec', '').replace('/pro', '')
-        print(event)
+        logger.info("Posting data for %s", event)
         
         qDic = {'schedule_url_slug': event}
         eventObj = requests.get(base + 'api/event/', json=qDic)
@@ -134,13 +132,12 @@ class ResultScraper(Scraper):
                                     base + 'api/racer/', json={'driver_url_slug': ts['url']}
                                 ).json()[0]['id']
                             except IndexError:
-                                print("No ts driver record, need to handle!")
+                                logger.info("No ts driver record, need to handle!")
                                 ds = DriverScraper(ts['url'])
                                 ds.fetch()
                                 ds.checkAndParse()
                                 ds.extract()
                                 ds._cleanData()
-                                print(ds.__dict__)
                                 racer_t = ds.postData(base=base, pro2=pro2, tokenPath=tokenPath)[0]['id']
                         if bs['url'] not in ['/drivers/bye', 'racer/bye', '#']:
                             if bs['url'] == '/drivers/benhobson':
@@ -151,16 +148,14 @@ class ResultScraper(Scraper):
                                 racer_b = requests.get(
                                     base + 'api/racer/', json={'driver_url_slug': bs['url']}
                                 ).json()
-                                print(racer_b, bs['url'])
                                 racer_b = racer_b[0]['id']
                             except IndexError:
-                                print("No bs driver record, need to handle!")
+                                logger.info("No bs driver record, need to handle!")
                                 ds = DriverScraper(bs['url'])
                                 ds.fetch()
                                 ds.checkAndParse()
                                 ds.extract()
                                 ds._cleanData()
-                                print(ds.__dict__)
                                 racer_b = ds.postData(base=base, pro2=pro2, tokenPath=tokenPath)[0]['id']
                         else:
                             racer_b = None

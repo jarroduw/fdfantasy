@@ -179,7 +179,9 @@ class RaceApi(APIView):
                 ## NOTE: I HAVE NOT TESTED THIS ELSE STATEMENT OR THE result[0].winner == winner, will test after long-beach
                 ## Don't have a winner, going to update record and return
                 temp = result.first()
-                temp.update(winner = winner)
+                winner_obj = Racer.objects.get(pk=winner)
+                temp.winner = winner_obj
+                temp.save()
                 temp.refresh_from_db()
                 serializer_exists = RaceSerializer(temp)
             return Response(serializer_exists.data)
