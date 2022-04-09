@@ -2,12 +2,13 @@ import requests
 import datetime
 import time
 import logging
-from scrapeResultsHistoric import ResultScraper
 
 log_format = '%(levelname)s %(asctime)s %(module)s %(message)s'
 logging.basicConfig(filename='event_scraper_service.log', level=logging.DEBUG, format=log_format)
 #logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+from scrapeResultsHistoric import ResultScraper
 
 if __name__ == '__main__':
     

@@ -660,55 +660,74 @@ class TeamRacerObject(object):
         self.id = self.racer.id
         self.eventObj = event
         self.ptsOrder = [x for x in ScoringValue.AWARDS if x[0] != 'pro2-bonus']
+        self.ptsVals = ScoringValue.get_league_pts(self.team.league)
         try:
-            self.pro2Multiplier = ScoringValue.objects.filter(award='pro2-bonus')[0].points
-        except IndexError:
+            self.pro2Multiplier = self.ptsVals['pro2-bonus']
+        except KeyError:
             self.pro2Multiplier = 1
         if not racer.pro2:
             self.pro2Multiplier = 1
+        
 
+        ## Then need to calculate by event
         if self.eventObj is not None:
-            allPoints = self.racer.scoringevent_set.filter(event__end__lte=event.end)
-            eventPoints = allPoints.filter(event=event)
+            ## Need to calculate total season points through event, so loop through events until we get to current, then exit
+            allEvents = Event.objects.filter(season=self.eventObj.season).order_by('start').all()
+            
+            self.allScoring = {}
+            for e in allEvents:
+                qualify_all = Qualify.objects.filter(event=e.id).all()
 
-            self.eventPointsDic = {}
-            for pts in eventPoints:
-                try:
-                    self.eventPointsDic[pts.value.award] += (pts.value.points*self.pro2Multiplier)
-                except KeyError:
-                    self.eventPointsDic[pts.value.award] = (pts.value.points*self.pro2Multiplier)
-            self.eventPointsLi = []
-            for k in self.ptsOrder:
-                try:
-                    val = self.eventPointsDic[k[0]]
-                except KeyError:
-                    val = 0
-                self.eventPointsLi.append(val)
-            self.eventPoints = sum(self.eventPointsLi)
-        else:
-            allPoints = self.racer.scoringevent_set.all()
+                qualify = Qualify.objects.filter(event=e.id, racer=self.id).first()
+                if qualify is not None:
+                    qualify_points = len(qualify_all) - qualify.rank + 1
+                else:
+                    qualify_points = 0
+                allRaces_top = Race.objects.filter(event=e.id, top_seed=self.id)
+                allRaces_bottom = Race.objects.filter(event=e.id, bottom_seed=self.id)
+                temp = [x for x in allRaces_top] + [x for x in allRaces_bottom]
+                temp.sort(key=lambda x: x.event_round, reverse=True)
 
-        self.allPointsDic = {}
-        for pts in allPoints:
-            try:
-                self.allPointsDic[pts.value.award] += (pts.value.points*self.pro2Multiplier)
-            except KeyError:
-                self.allPointsDic[pts.value.award] = (pts.value.points*self.pro2Multiplier)
-        self.allPointsLi = []
-        for k in self.ptsOrder:
-            try:
-                val = self.allPointsDic[k[0]]
-            except KeyError:
-                val = 0
-            self.allPointsLi.append(val)
-        self.allPoints = sum(self.allPointsLi)
+                scoring = {}
+                scoring['qualify-position'] = qualify_points
+                scoring['top-32'] = len([x for x in temp if x.event_round == 32]) != 0
+                scoring['top-16'] = len([x for x in temp if x.event_round == 16]) != 0
+                scoring['top-8'] = len([x for x in temp if x.event_round == 8]) != 0
+                scoring['quarters'] = len([x for x in temp if x.event_round == 4]) != 0
+                rd2_temp = [x for x in temp if x.event_round == 2]
+                scoring['final'] = len(rd2_temp) != 0
+                if not scoring['final']:
+                    scoring['win'] = False
+                else:
+                    scoring['win'] = rd2_temp[0].winner.id == self.id
+
+                for pt in scoring:
+                    temp_score = int(round(scoring[pt] * self.ptsVals[pt] * self.pro2Multiplier))
+                    scoring[pt] = temp_score
+                    if pt in self.allScoring.keys():
+                        self.allScoring[pt] += temp_score
+                    else:
+                        self.allScoring[pt] = temp_score
+
+                self.scoring = scoring
+                self.eventPointsLi = []
+                self.allPointsLi = []
+                for s in self.ptsOrder:
+                    self.eventPointsLi.append(self.scoring[s[0]])
+                    self.allPointsLi.append(self.allScoring[s[0]])
+                self.eventPoints = sum(self.eventPointsLi)
+                self.allPoints = sum(self.allPointsLi)
+                
+                if e == self.eventObj:
+                    ## Once we get to this event, stop
+                    break
+            
 
 class ViewFantasyTeam(View):
     ##View by event, if same day or later than event start, show active, but not writeable
     ##  if before event start, show active, make writeable
     ##  if after event start, show active, but not writeable
     ##DEFAULT=next event, based on end
-
 
     def get(self, request, team_id, event_id=None):
 

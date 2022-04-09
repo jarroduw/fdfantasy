@@ -7,7 +7,7 @@
 {% endblock title_page %}
 
 {% block content %}
-    <p>Here we set the point values for each of the scoring events. For each type of event, we've specified a default value that distributes the likelihood of winning a given season without giving the winner of Formula Drift a guaranteed win.</p>
+    <p>Here we set the point values for each of the scoring events. Scoring follows from the official Formula Drift scoring algorithm, except for qualifying, which has points distributed on the basis of qualifying position (32 = 1 points, 1 = 32 points). Below, we show the multiplier for qualifying position. You will select a team of drivers during the draft, so the Pro Cup winner will not necessarily guarantee you a win. Additionally, the Pro-Spec multiplier incentivizes picking relative unknowns.</p>
     <div class="content container">
         <form method="POST">
             {% csrf_token %}

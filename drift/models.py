@@ -118,35 +118,40 @@ class Race(models.Model):
 
 class ScoringValue(models.Model):
     AWARDS = (
-        ('win', 'W',),
-        ('qualify', 'Q',),
         ('qualify-position', 'QP'),
         ('top-32', 'T32'),
         ('top-16', 'T16'),
         ('top-8', 'T8',),
         ('quarters', 'T4',),
         ('final', 'T2',),
-        #('one-more-time', 'one-more-time',),
-        #('checked-in', 'checked-in',),
-        #('clean-sweep', 'clean-sweep',)
+        ('win', 'W',),
         ('pro2-bonus', 'pro2-bonus',)
     )
     DEFAULTS = {
-        'win': 1,
-        'qualify': 2,
-        'qualify-position': 3,
-        'top-32': 4,
-        'top-16': 5,
-        'top-8': 6,
-        'quarters': 7,
-        'final': 8,
-        'pro2-bonus': 9,
+        'qualify-position': 0,
+        'top-32': 35,
+        'top-16': 17,
+        'top-8': 15,
+        'quarters': 13,
+        'final': 11,
+        'win': 9,
+        'pro2-bonus': 1.5,
     }
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     league = models.ForeignKey(League, models.CASCADE)
     award = models.TextField(choices=AWARDS)
-    points = models.IntegerField()
+    points = models.FloatField()
+
+    @classmethod
+    def get_league_pts(cls, league):
+        """Returns points as a dictionary for a league"""
+        d = {}
+        vals = ScoringValue.objects.filter(league=league)
+        for v in vals:
+            d[v.award] = v.points
+
+        return d
 
     def __str__(self):
         return '%s - %s' % (self.league, self.award,)

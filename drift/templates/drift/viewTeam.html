@@ -58,7 +58,7 @@
                 <li>There are no active drivers. If you have drivers on your team, click the "activate" button to move them into this slot.</li>
             {% else %}
                 <table class='table'>
-                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>all</th></thead>
+                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>season</th></thead>
                     <tbody>
                         {% for racer in active %}
                             <tr>
@@ -106,7 +106,7 @@
                 <li>There are no inactive drivers</li>
             {% else %}
                 <table class="table">
-                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>all</th></thead>
+                    <thead><th style="width: 21%"></th><th style="width: 50%">Racer</th><th>Pro2</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>this event</th>{% for x in scoringValHeaders %}<th>{{x}}</th>{% endfor %}<th>season</th></thead>
                     <tbody>
                     {% for racer in inactive %}
                         <tr>
