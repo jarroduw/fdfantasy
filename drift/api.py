@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import random
 
 import time
@@ -76,18 +78,13 @@ class EventApi(APIView):
 
     def get(self, request, format=None):
         """API call to get object based on features in json"""
-        print("In get")
         data = request.data
-        print(data)
         if 'get_latest' in data.keys():
-            print("In get latest")
             result = Event.objects.filter(
                 end__gte=datetime.datetime.utcnow()
                 ).order_by('end').first()
         else:
             result = Event.objects.filter(**data).first()
-        print("Serializing")
-        print(result)
         serializer = EventSerializer(result)
         return Response(serializer.data)
 
@@ -99,12 +96,10 @@ class QualifyApi(APIView):
         data = request.data
         scraped_date = data['scraped']
         del data['scraped']
-        print(data)
         result = Qualify.objects.filter(**data).all()
         
         if len(result) > 0:
-            print("===========")
-            print("FOUND EXISTING RECORD")
+            logger.debug("FOUND EXISTING QUALIFY RECORD")
             ## If records exist, skip over
             serializer_exists = QualifySerializer(result.first())
             return Response(serializer_exists.data)
@@ -162,21 +157,18 @@ class RaceApi(APIView):
         winner = data['winner']
         del data['scraped']
         del data['winner']
-        print(data)
+        logger.debug("QUERY DATA: %s", data)
         result = Race.objects.filter(**data).all()
-        print(result)
+        logger.debug("QUERY RESULT: %s", result)
         
         if len(result) > 0:
-            print("===========")
-            print("FOUND EXISTING RECORD")
+            logger.info("FOUND EXISTING RECORD")
             ## If records exist, skip over
             if result[0].winner == winner:
-                print("--> Existing record has not changed")
-                ## Already have the winner
+                logger.info("--> Existing record has not changed")
                 serializer_exists = RaceSerializer(result.first())
             else:
-                print("--> Existing record has changed winner, saving")
-                ## NOTE: I HAVE NOT TESTED THIS ELSE STATEMENT OR THE result[0].winner == winner, will test after long-beach
+                logger.info("--> Existing record has changed winner, saving")
                 ## Don't have a winner, going to update record and return
                 temp = result.first()
                 winner_obj = Racer.objects.get(pk=winner)
@@ -185,9 +177,11 @@ class RaceApi(APIView):
                 temp.refresh_from_db()
                 serializer_exists = RaceSerializer(temp)
             return Response(serializer_exists.data)
+
         ## Otherwise, add to it
-        print("LET'S GO!")
+        logger.debug("Adding race result")
         data['scraped'] = scraped_date
+        data['winner'] = winner
         serializer = RaceSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

@@ -160,17 +160,24 @@ LOGGING = {
             'style': '{',
         },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} {asctime}: {message}',
             'style': '{',
         },
     },
     'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
         'file': {
-            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': 'logs/debug.log',
             'formatter': 'verbose',
         },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO'
     },
     'loggers': {
         'django': {

@@ -237,7 +237,7 @@ def postData(extracted, scrape_datetime, pro2=False, base='http://localhost:8000
 
 if __name__ == '__main__':
     scrape_datetime = format(datetime.datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
-    ros_pro = ResultOverviewScraper('standings/2019/pro')
+    ros_pro = ResultOverviewScraper('standings/2020/pro')
     ros_pro.fetch()
     ros_pro.checkAndParse()
     ros_pro.extract()
@@ -245,7 +245,7 @@ if __name__ == '__main__':
 
     #ros_pro.saveSoupToFile('test_standingsoverview_pro.html')
 
-    # ros_2 = ResultOverviewScraper('standings/2020/pro2')
+    # ros_2 = ResultOverviewScraper('standings/2021/pro2')
     # ros_2.fetch()
     # ros_2.checkAndParse()
     # ros_2.extract()
