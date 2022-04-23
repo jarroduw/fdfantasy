@@ -16,7 +16,7 @@
                 <p>Next event: <a href="{% url 'drift:viewEvent' nextEvent.id %}">{{nextEvent.name}} ({{nextEvent.start}} - {{nextEvent.end}})</a></p>        
             {% endif %}
             {% if draftInFuture %}
-                <p>Draft: {{team.league.draftdate.draft}} ({{team.league.draftdate.draft|timeuntil}})</p>
+                <p>Draft: {{team.league.draftdate.draft}} ({{team.league.draftdate.draft|timeuntil}}) (<a href="{% url 'drift:draft' team.id %}">Join here</a>)</p>
                 <p><em>The draft is each team's opportunity to select racers for the season. While a team can acquire drivers via trades and free agency, this is the opportunity for teams to acquire most of their talent. Make sure to participate in your league's draft. More details coming soon!</em></p>
             {% endif %}
             {% if request.user == team.owner and not draftInFuture %}

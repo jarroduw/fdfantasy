@@ -14,7 +14,8 @@
                 <div class="panel-heading"><p>Overview Information</p></div>
                 <div class="panel-body">
                     <ul>
-                        <li>League: {{team.league}}</li>
+                        <li>League: {{team.league.name}}</li>
+                        <li>My Team: {{team.name}}</li>
                         <li>Max Picks: {{team.league.max_racers}}</li>
                         <li>Draft Interval: {{team.league.draft_interval_minutes}}</li>
                     </ul>
@@ -154,15 +155,15 @@
 
 // Set the date we're counting down to
 var countDownDate = new Date({{timeUntilDue}}).getTime();
-//console.log(countDownDate);
+console.log("countDownDate" + countDownDate);
 
 var lastNotification = {{notifications.0.created_at|date:'U.u'}};
-console.log(lastNotification);
 function getNotification(team_id, lastPoll){
     let action = ['notification', 'read']
     let params = {'lastPoll': lastPoll}
     client.action(schema, action, params).then(function(results){
         if (results.length > 0){
+            console.log("Reloading because of notification");
             window.location.reload(true);
         };
     });
@@ -173,18 +174,18 @@ var x = setInterval(function() {
 
   // Get today's date and time
   var now = Math.floor((new Date()).getTime() / 1000);
-  //console.log("Now " + now);
+  console.log("Now " + now);
 
   // Find the distance between now and the count down date
   var distance = countDownDate - now;
-  //console.log("Distance: " + distance);
+  console.log("Distance: " + distance);
 
   // Time calculations for days, hours, minutes and seconds
   var days = Math.floor(distance / (60 * 60 * 24));
   var hours = Math.floor((distance % (60 * 60 * 24)) / (60 * 60));
   var minutes = Math.floor((distance % (60 * 60)) / (60));
   var seconds = Math.floor((distance % (60)));
-  //console.log(seconds);
+  console.log(seconds);
 
   // Display the result in the element with id="remaining"
   document.getElementById("remaining").innerHTML = "Time Remaining:" + days + "d " + hours + "h "
@@ -197,7 +198,7 @@ var x = setInterval(function() {
     document.getElementById("remaining").innerHTML = "Time Remaining: EXPIRED";
     if ({{active}} == true){
         window.location.reload(true);
-        console.log('reset');
+        console.log('reset because of remaining time');
     }
   };
 }, 1000);
@@ -278,7 +279,7 @@ function executeDraftPick(team_id){
     var action = ['draft', 'pick', 'create']
     var params = {'team_id': team_id}
     client.action(schema, action, params).then(function(result){
-        console.log(result);
+        console.log('made a pick, result:' + result);
         window.location.reload(true);
     });
 }

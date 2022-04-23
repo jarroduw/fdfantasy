@@ -71,7 +71,7 @@ class RegisterAccountView(View):
                             password=signUpForm.cleaned_data['password1'],
                             )
                         login(request, new_user)
-                        adminUser = User.objects.filter(username='admin')[0]
+                        adminUser = User.objects.first()
                         email_msg = get_template(
                             'drift/email_activateEmail.html'
                             ).render({
@@ -228,7 +228,7 @@ class AllLeagues(View):
         return render(request, 'drift/leagues.html', context=context)
 
 def draftInFuture(league):
-    return timezone.now() < league.draftdate.draft
+    return not league.draftdate.finished
 
 
 class CreateLeagueView(View):
@@ -480,7 +480,7 @@ class ManufacturerTeamView(View):
 
 class CreateFantasyTeam(View):
     def post(self, request, team_id=None, key_code=None, league_id=None):
-        """Save new or updated team"""
+        """Save new or updated team, must be associated with a league"""
 
         key_code_error = ''
 
@@ -492,7 +492,8 @@ class CreateFantasyTeam(View):
             validationRequired = False
 
         if form.is_valid():
-            if not form.cleaned_data['league'].key_required:
+            league = League.objects.get(id=league_id)
+            if not league.key_required:
                 validationRequired = False
             key_code = form.cleaned_data['key_code']
             key_code_obj = LeagueInvite.objects.filter(key_code=key_code).order_by('-created_at')
@@ -507,11 +508,23 @@ class CreateFantasyTeam(View):
                         print("No match!")
                         key_code_error += 'That key code is not valid for this league.'
                 except IndexError:
+                    ## For case when validation is not required
                     pass
                 if key_code_error == '':
                     team = form.save(commit=False)
                     team.owner = request.user
                     team.save()
+                    ## APPEND TO DRAFT ORDER
+                    do_league = DraftOrder.objects.filter(league=league_id)
+                    max_seed = max([x.seed for x in do_league])
+                    print("MAX SEED IS %s" % (max_seed,))
+                    do_team = DraftOrder.objects.create(league=league, team=team, seed=max_seed+1)
+                    do_team.save()
+                    ## SET DEFAULT PICKS QUEUE
+                    all_racers = Racer.objects.all()
+                    default_picks = DraftQueue.objects.create(team=team, priority=[x.id for x in all_racers])
+                    default_picks.save()
+
                     return HttpResponseRedirect(reverse('drift:viewFantasyTeam', args=[team.id]))
             else:
                 key_code_error += 'That key code is not valid. Please check your email or contact your league race official.'
@@ -1195,14 +1208,15 @@ class DraftView(View):
         try:
             test = team.draftqueue
         except DraftQueue.DoesNotExist:
-            dq = DraftQueue.objects.create(team=team)
+            all_racers = Racer.objects.all()
+            dq = DraftQueue.objects.create(team=team, priority=[x.id for x in all_racers])
             dq.save()
 
         dd = team.league.draftdate
         if dd.finished:
             return HttpResponseRedirect(reverse('drift:viewFantasyTeam', args=[team.id]))
 
-        now = timezone.now()        
+        now = timezone.now()
         one_hour = dd.draft - datetime.timedelta(hours=1)
         if now >= one_hour:
             notifications = Notification.objects.filter(created_at__gte=one_hour, user=request.user).order_by('-created_at')
@@ -1279,11 +1293,10 @@ class DraftView(View):
         context = {'team': team}
         return render(request, 'drift/draftBoardToEarly.html', context)
 
-##TODO: Need analysis to decide on scoring options
+##TODO: Need view for league admin to set the draft order
+##TODO: Need default draft order as users register with the league (add to next seed spot)
+##TODO: Need autodraft based on scoring order
 ##TODO: Need table view for racer with league specific scoring
-##TODO: Need table view for racer with actual scoring event counts
-##TODO: Need table view for team with league specific scoring
-##TODO: Need table view for team with actual scoring event counts
 ##TODO: First login seems to hang... no bueno
 ##TODO: Sexier look and feel
 ##TODO: Mock draft no other users

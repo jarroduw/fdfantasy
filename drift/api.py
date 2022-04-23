@@ -308,7 +308,7 @@ def checkDraftStartTask():
     now_plus_hour = now + datetime.timedelta(hours=1)
     drafts = DraftDate.objects.filter(draft__lte=now_plus_hour, started=False)
     for draft in drafts:
-        if draft.draft >= now:
+        if draft.draft <= now:
             setDraftDateActive(draft)
         elif not draft.one_hour_warning:
             setDraftDateWarning(draft)
@@ -365,14 +365,19 @@ def getAutodraftInstance(draft, tries=20):
     return thisAd
 
 def makeDraftPick(team_id, draft_id):
+    logger.info("Making a pick for team %s", team_id)
+    ## Making a draft pick
     team = Team.objects.get(pk=team_id)
+    ## Figuring out draft pick context
     do = DraftOrder.objects.filter(league=team.league).order_by('seed')
     myDo = do.get(team=team)
     meIdx = list(do).index(myDo)
+    ## Figure out what the last pick was
     try:
         lastPick = DraftPick.objects.filter(draft=team.league.draftdate).latest('selected_at')
         lastPickDo = do.get(team=lastPick.team)
         lastPickIdx = list(do).index(lastPickDo)
+        ## Figure out if it's the first pick, or the last pick plus one
         if lastPick.pick_number < len(team.league.team_set.all()):
             pick_number = lastPick.pick_number + 1
             rd = lastPick.round
@@ -380,28 +385,38 @@ def makeDraftPick(team_id, draft_id):
             pick_number = 1
             rd = lastPick.round + 1
     except DraftPick.DoesNotExist:
+        ## For scenario where there was no last draft pick (i.e., the first pick of the draft)
         lastPick = None
         lastPickIdx = -1
         pick_number = 1
         rd = 1
     
+    ## Now, assuming it's actually my turn, let's make a pick
     if meIdx - 1 == lastPickIdx or (lastPickIdx == len(do)-1 and meIdx == 0):
         now = timezone.now()
+        ## Getting the draftqueue, which has my top pick in it, who i want to add to my team
         dq = team.draftqueue
         with transaction.atomic():
             if len(dq.priority) != 0:
+                ## Assuming that we have someone in our draft queue
                 racer_id = dq.priority.pop(0)
                 racer = Racer.objects.get(pk=racer_id)
             else:
+                ## Otherwise, we just take from the top of the list of undrafteds...
                 do = DraftOrder.objects.filter(league=team.league)
                 try:
+                    ## Get all picks
                     allPicks = DraftPick.objects.filter(team__in=[x.team for x in do])
+                    ## then filter out all the racers that have already been picked
                     racers = Racer.objects.all().exclude(id__in=[x.racer.id for x in allPicks])
                 except DraftPick.DoesNotExist:
+                    ## For the first pick...
                     racers = Racer.objects.all()
                 
+                ## Orders by ranking, which we don't currently have data for...
                 racer = sorted(racers, key=lambda x: x.getLatestRanking(), reverse=False)[0]
 
+            ## Actually make the pick
             dp = DraftPick.objects.create(
                 draft=team.league.draftdate,
                 team=team,
@@ -411,9 +426,20 @@ def makeDraftPick(team_id, draft_id):
                 pick_number=pick_number
             )
             dp.save()
+            ## Add racer to team
             team.racers.add(racer)
             dq.save()
+            ## Save draft queue
             for team in team.league.team_set.all():
+                ## Need to drop that racer from the draft queue of all teams
+                dq = team.draftqueue
+                try:
+                    found = dq.priority.pop(dq.priority.index(racer.id))
+                    dq.save()
+                    logger.info("Dropping racer from queue: %s for team: %s", racer.id, team.id)
+                except ValueError:
+                    pass
+                ## Send notification, which will trigger a refresh of the screen
                 note = Notification.objects.create(
                     user=team.owner,
                     msg='%s selected %s with pick %s of round %s.' % (
@@ -424,7 +450,9 @@ def makeDraftPick(team_id, draft_id):
                         )
                 )
                 note.save()
+                logger.info("Finished drafting player")
         return True
+    ## If it's not my turn, returning False
     return False
 
 
@@ -432,7 +460,7 @@ class QueueAPI(APIView):
     permission_classes = [IsTeamOwner|ReadOnly]
 
     def get(self, request, team_id):
-        dq = DraftQueue.objects.get(pk=team_id)
+        dq = DraftQueue.objects.get(team=team_id)
         queue = self._getRacerNamesFromQueue(dq)
         return Response(queue)
 
@@ -504,19 +532,28 @@ def setDraftDateActive(draft):
         #startAutodraft(draft)
 
 def startAutodraft(draft):
+    logger.info("Starting autodraft: %s", draft.id)
     do = DraftOrder.objects.all().order_by('seed')
     timeUntil = draft.league.draft_interval_minutes*60
     while not draft.finished:
         for d in do:
-            ##Start task for team
+            logger.warning("Team %s on the clock and seed=%s", d.team, d.seed)
+            ##Start task for team, with  countdown
             s = DraftPickReservation.schedule(draft, d.team, delay=timeUntil)
+            logger.warning("Scheduled reservation for %s", d.team.id)
+            ##Infinite loop for pick
             while True:
+                logger.warning("Waiting for pick")
+                ## Why atomic here? Seems like it would not be able to handle calls to queue
                 with transaction.atomic():
+                    ## Get all queued picks, then get all of them marked as expired
                     t = DraftPickReservation.getQueued(draft, expired=True)
                     if len(t) > 0:
+                        logger.info("Pick made, executing draft pick for %s", d.team.id)
                         for s in t:
                             ##Execute
                             success = makeDraftPick(d.team.id, draft.id)
+                            logger.info("Executed pick with success=%s", success)
                             s.active=False
                             s.save()
                         break
